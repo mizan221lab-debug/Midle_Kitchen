@@ -2,7 +2,7 @@
 <html lang="th">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
   <title>BKP Kitchen ERP (Single-File)</title>
 
   <!-- Tailwind + Font -->
@@ -10,27 +10,29 @@
   <link href="https://fonts.googleapis.com/css2?family=Sarabun:wght@300;400;600;700;800&display=swap" rel="stylesheet">
 
   <style>
-    body { font-family: 'Sarabun', sans-serif; background: #f1f5f9; margin: 0; }
+    body { font-family: 'Sarabun', sans-serif; background-color: #f1f5f9; margin: 0; }
     .sidebar-active { background: #2563eb; color: white; box-shadow: 0 10px 15px -3px rgba(37, 99, 235, 0.3); }
-    .glass-card { background: rgba(255, 255, 255, 0.95); backdrop-filter: blur(10px); border: 1px solid rgba(226, 232, 240, 0.85); }
-    .input-premium {
-      width: 100%; padding: 0.9rem 1rem; border-radius: 1rem; border: 1px solid #e2e8f0;
-      background-color: #f8fafc; font-weight: 700; outline: none; transition: all .15s;
+    .glass-card { background: rgba(255, 255, 255, 0.95); backdrop-filter: blur(10px); border: 1px solid rgba(226, 232, 240, 0.8); }
+    .input-premium{
+      width:100%; padding: 1rem; border-radius: 1rem; border: none;
+      background-color:#f8fafc; font-weight: 700; box-shadow: inset 0 2px 4px 0 rgba(0,0,0,0.05);
+      outline:none; transition: all .2s;
     }
-    .input-premium:focus { box-shadow: 0 0 0 2px #3b82f6; background: #fff; border-color:#bfdbfe;}
+    .input-premium:focus { box-shadow: 0 0 0 2px #3b82f6; background-color: #ffffff; }
     .no-scrollbar::-webkit-scrollbar { display: none; }
     @media print {
-      .no-print { display:none !important; }
-      body { background:white; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+      .no-print { display: none !important; }
+      body { background: white; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
       main { padding: 0 !important; margin: 0 !important; }
     }
-    .animate-in { animation: fadeIn .25s ease-out; }
-    @keyframes fadeIn { from { opacity: 0; transform: translateY(8px);} to { opacity:1; transform: translateY(0);} }
+    .animate-in { animation: fadeIn 0.4s ease-out; }
+    @keyframes fadeIn { from { opacity: 0; transform: translateY(10px);} to { opacity: 1; transform: translateY(0);} }
   </style>
 
-  <!-- React + Recharts + Lucide + Babel -->
+  <!-- Libraries (ต้องตามลำดับ) -->
   <script crossorigin src="https://unpkg.com/react@18.2.0/umd/react.production.min.js"></script>
   <script crossorigin src="https://unpkg.com/react-dom@18.2.0/umd/react-dom.production.min.js"></script>
+  <script src="https://unpkg.com/prop-types@15.8.1/prop-types.min.js"></script>
   <script src="https://unpkg.com/recharts@2.12.7/umd/Recharts.js"></script>
   <script src="https://unpkg.com/lucide@latest"></script>
   <script src="https://unpkg.com/@babel/standalone@7.23.11/babel.min.js"></script>
@@ -38,75 +40,63 @@
 
 <body class="text-slate-900">
   <div id="root">
-    <!-- Loading screen -->
+    <!-- Loading Screen (จะหายเมื่อ React render สำเร็จ) -->
     <div class="h-screen flex flex-col items-center justify-center bg-[#0f172a] text-white">
       <div class="animate-spin rounded-full h-16 w-16 border-t-4 border-blue-500 mb-6 shadow-2xl"></div>
       <h1 class="text-2xl font-black tracking-widest uppercase animate-pulse">กำลังโหลดระบบ BKP...</h1>
       <p class="text-slate-400 text-sm mt-4">หากค้างนานเกิน 10 วินาที ให้กดรีเฟรชหน้าจอ</p>
+      <p class="text-slate-500 text-xs mt-2">ถ้ายังค้าง: เปิด F12 → Console แล้วส่ง error มาได้</p>
     </div>
   </div>
 
   <script type="text/babel">
-    const { useEffect, useMemo, useState } = React;
+    const { useState, useEffect, useMemo, useRef } = React;
 
-    // Recharts
+    // -----------------------------
+    // 1) Recharts Safeguard
+    // -----------------------------
     const RC = window.Recharts || {};
     const {
-      AreaChart, Area, XAxis, YAxis, CartesianGrid,
-      Tooltip, ResponsiveContainer, PieChart, Pie, Legend
+      BarChart, Bar, AreaChart, Area, XAxis, YAxis, CartesianGrid,
+      Tooltip, ResponsiveContainer, Cell, PieChart, Pie, Legend
     } = RC;
 
-    // ---------- Master Data ----------
+    const hasCharts = !!(ResponsiveContainer && AreaChart && Area && XAxis && CartesianGrid && Tooltip);
+
+    // -----------------------------
+    // 2) Master Data
+    // -----------------------------
     const INITIAL_DATA = {
       PRODUCTS: [
-        { id: "p1", name: "น้ำยำปลาร้า", rmCost: 50.79, price: 160, color: "#f43f5e" },
-        { id: "p2", name: "ซอสผัดไทย", rmCost: 59.27, price: 150, color: "#f59e0b" },
-        { id: "p3", name: "น้ำจิ้มแจ่ว", rmCost: 79.32, price: 140, color: "#10b981" },
-        { id: "p4", name: "ซอสหมักไก่", rmCost: 105.55, price: 160, color: "#3b82f6" },
-        { id: "p5", name: "น้ำส้มตำ", rmCost: 74.72, price: 120, color: "#8b5cf6" }
+        { id: 'p1', name: 'น้ำยำปลาร้า', rmCost: 50.79, price: 160, color: '#f43f5e' },
+        { id: 'p2', name: 'ซอสผัดไทย', rmCost: 59.27, price: 150, color: '#f59e0b' },
+        { id: 'p3', name: 'น้ำจิ้มแจ่ว', rmCost: 79.32, price: 140, color: '#10b981' },
+        { id: 'p4', name: 'ซอสหมักไก่', rmCost: 105.55, price: 160, color: '#3b82f6' },
+        { id: 'p5', name: 'น้ำส้มตำ', rmCost: 74.72, price: 120, color: '#8b5cf6' }
       ],
       SHAREHOLDERS: [
-        { id: "s1", name: "บี", percent: 50, color: "#3b82f6" },
-        { id: "s2", name: "กล้วย", percent: 25, color: "#10b981" },
-        { id: "s3", name: "เป้", percent: 25, color: "#f59e0b" }
+        { id: 's1', name: 'บี', percent: 50, color: '#3b82f6' },
+        { id: 's2', name: 'กล้วย', percent: 25, color: '#10b981' },
+        { id: 's3', name: 'เป้', percent: 25, color: '#f59e0b' }
       ],
-      // ปรับให้เหมาะกับที่คุณเคยคุย: ค่าแรง 15, ค่าบัญชี 8, ค่าไฟ 1/kg
-      // cleaning/depreciation/gas เป็น “ค่าอื่นๆ” ที่คุณตั้งได้เองในระบบ
-      OP_COSTS: { labor: 15, accounting: 8, electricity: 1, depreciation: 2, gas: 4 },
-      // PIN หลังบ้าน (แก้ได้ในโค้ด หรือเพิ่มเมนูเปลี่ยน PIN ต่อไปได้)
-      ADMIN_PIN: "1234"
+      OP_COSTS: { labor: 15, accounting: 8, electricity: 1, cleaning: 1, depreciation: 2, gas: 4 }
     };
 
+    // -----------------------------
+    // 3) Storage Keys (แก้ INVS ให้ถูก)
+    // -----------------------------
     const KEYS = {
-      PRODS: "bkp_prods_th",
-      COSTS: "bkp_costs_th",
-      SHARES: "bkp_shares_th",
-      INVS: "bkp_invs_th",
-      EXPS: "bkp_exps_th",
-      PINOK: "bkp_pin_ok"
+      PRODS:  'bkp_prods_th',
+      COSTS:  'bkp_costs_th',
+      SHARES: 'bkp_shares_th',
+      INVS:   'bkp_invs_th',
+      EXPS:   'bkp_exps_th'
     };
 
-    const COST_LABELS = {
-      labor: "ค่าแรง",
-      accounting: "ค่าบัญชี",
-      electricity: "ค่าไฟ",
-      depreciation: "ค่าเสื่อม",
-      gas: "ค่าแก๊ส",
-      cleaning: "ทำความสะอาด",
-      water: "ค่าน้ำ",
-      other: "อื่นๆ"
-    };
-
-    // ---------- Helpers ----------
-    const thDate = (d) => new Date(d).toLocaleDateString("th-TH");
-    const thMonthShort = (d) => new Date(d).toLocaleDateString("th-TH", { month: "short" });
-    const money = (n) => (Number(n) || 0).toLocaleString(undefined, { maximumFractionDigits: 2 });
-    const clamp = (n, min, max) => Math.min(Math.max(n, min), max);
-
-    const safeJSON = (key, fallback) => {
+    const safeLoad = (key, fallback) => {
       try {
         const raw = localStorage.getItem(key);
-        if (!raw) return fallback;
+        if (raw === null || raw === undefined || raw === '') return fallback;
         const parsed = JSON.parse(raw);
         return (parsed === null || parsed === undefined) ? fallback : parsed;
       } catch (e) {
@@ -114,93 +104,110 @@
       }
     };
 
-    const saveJSON = (key, value) => localStorage.setItem(key, JSON.stringify(value));
-
-    const sumObj = (obj) => Object.values(obj || {}).reduce((s, v) => s + (parseFloat(v) || 0), 0);
-
-    // ---------- Components ----------
-    const NavItem = ({ active, onClick, icon, label }) => (
-      <button onClick={onClick}
-        className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-all
-        ${active ? "sidebar-active text-white" : "text-slate-400 hover:bg-white/5 hover:text-slate-200"}`}>
-        <i data-lucide={icon} className="w-5 h-5"></i>
-        <span className="text-sm font-bold">{label}</span>
-      </button>
-    );
-
-    const StatCard = ({ label, value, color, icon, bg="bg-white", sub }) => (
-      <div className={`p-6 rounded-3xl border border-slate-200 glass-card shadow-sm ${bg}`}>
-        <div className="flex justify-between items-center mb-4">
-          <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">{label}</p>
-          <div className="p-2 bg-slate-50 rounded-xl text-slate-300">
-            <i data-lucide={icon} className="w-4 h-4"></i>
-          </div>
-        </div>
-        <h3 className={`text-2xl font-black ${color} tracking-tight`}>฿{money(value)}</h3>
-        <p className="text-[9px] font-bold text-slate-300 uppercase mt-1">{sub}</p>
-      </div>
-    );
-
-    const Badge = ({ tone="slate", children }) => {
-      const map = {
-        green: "bg-green-100 text-green-700",
-        red: "bg-red-100 text-red-700",
-        amber: "bg-amber-100 text-amber-700",
-        slate: "bg-slate-100 text-slate-700",
-        blue: "bg-blue-100 text-blue-700"
-      };
-      return <span className={`text-[10px] px-2 py-1 rounded-md font-bold ${map[tone]||map.slate}`}>{children}</span>
+    const safeSave = (key, value) => {
+      try { localStorage.setItem(key, JSON.stringify(value)); } catch (e) {}
     };
 
-    // ---------- App ----------
+    const toNumber = (v, fallback = 0) => {
+      const n = parseFloat(v);
+      return Number.isFinite(n) ? n : fallback;
+    };
+
+    const formatMoney = (n) => {
+      const x = toNumber(n, 0);
+      return x.toLocaleString(undefined, { maximumFractionDigits: 2 });
+    };
+
+    // -----------------------------
+    // 4) Error Boundary (กัน render พังแล้วค้าง)
+    // -----------------------------
+    class ErrorBoundary extends React.Component {
+      constructor(props){
+        super(props);
+        this.state = { hasError:false, message:'' };
+      }
+      static getDerivedStateFromError(err){
+        return { hasError:true, message: (err && err.message) ? err.message : String(err) };
+      }
+      componentDidCatch(err, info){
+        console.error('BKP ErrorBoundary:', err, info);
+      }
+      render(){
+        if(this.state.hasError){
+          return (
+            <div className="min-h-screen bg-[#0f172a] text-white flex items-center justify-center p-6">
+              <div className="max-w-2xl w-full bg-white/5 border border-white/10 rounded-2xl p-6">
+                <h1 className="text-xl font-black mb-2">ระบบเจอข้อผิดพลาดในการโหลด</h1>
+                <p className="text-slate-300 text-sm mb-4">
+                  ข้อความ: <span className="font-bold text-red-300">{this.state.message}</span>
+                </p>
+                <div className="text-xs text-slate-400 space-y-2">
+                  <p>วิธีแก้เบื้องต้น:</p>
+                  <ul className="list-disc pl-5 space-y-1">
+                    <li>กดรีเฟรช (Cmd/Ctrl + Shift + R)</li>
+                    <li>เปิด F12 → Console แล้วส่ง error สีแดงมาให้ช่วยไล่ได้</li>
+                    <li>ถ้าเพิ่งแก้โค้ด ให้รอ GitHub Pages deploy แล้วค่อยรีเฟรชใหม่</li>
+                  </ul>
+                </div>
+              </div>
+            </div>
+          );
+        }
+        return this.props.children;
+      }
+    }
+
+    // -----------------------------
+    // 5) App
+    // -----------------------------
     const App = () => {
-      const [activeTab, setActiveTab] = useState("dashboard");
+      const [activeTab, setActiveTab] = useState('dashboard');
 
-      // Load state
-      const [products, setProducts] = useState(() => safeJSON(KEYS.PRODS, INITIAL_DATA.PRODUCTS));
-      const [opCosts, setOpCosts] = useState(() => safeJSON(KEYS.COSTS, INITIAL_DATA.OP_COSTS));
-      const [shareholders, setShareholders] = useState(() => safeJSON(KEYS.SHARES, INITIAL_DATA.SHAREHOLDERS));
-      const [invoices, setInvoices] = useState(() => safeJSON(KEYS.INVS, [])); // ✅ FIXED
-      const [expenses, setExpenses] = useState(() => safeJSON(KEYS.EXPS, []));
+      const [products, setProducts] = useState(() => safeLoad(KEYS.PRODS, INITIAL_DATA.PRODUCTS));
+      const [opCosts, setOpCosts] = useState(() => safeLoad(KEYS.COSTS, INITIAL_DATA.OP_COSTS));
+      const [shareholders, setShareholders] = useState(() => safeLoad(KEYS.SHARES, INITIAL_DATA.SHAREHOLDERS));
+      // ✅ แก้: ต้องใช้ KEYS.INVS (ไม่ใช่ KEYS.INVOICES)
+      const [invoices, setInvoices] = useState(() => safeLoad(KEYS.INVS, []));
+      const [expenses, setExpenses] = useState(() => safeLoad(KEYS.EXPS, []));
 
-      // Admin PIN gate
-      const [isAdmin, setIsAdmin] = useState(() => safeJSON(KEYS.PINOK, false) === true);
+      // report range
+      const [reportRange, setReportRange] = useState(() => ({
+        start: new Date(new Date().getFullYear(), new Date().getMonth(), 1).toISOString().split('T')[0],
+        end: new Date().toISOString().split('T')[0]
+      }));
 
-      // Report range
-      const [reportRange, setReportRange] = useState(() => {
-        const now = new Date();
-        const start = new Date(now.getFullYear(), now.getMonth(), 1).toISOString().split("T")[0];
-        const end = new Date().toISOString().split("T")[0];
-        return { start, end };
-      });
-
-      // Persist
+      // autosave
       useEffect(() => {
-        saveJSON(KEYS.PRODS, products);
-        saveJSON(KEYS.COSTS, opCosts);
-        saveJSON(KEYS.SHARES, shareholders);
-        saveJSON(KEYS.INVS, invoices);
-        saveJSON(KEYS.EXPS, expenses);
+        safeSave(KEYS.PRODS, products);
+        safeSave(KEYS.COSTS, opCosts);
+        safeSave(KEYS.SHARES, shareholders);
+        safeSave(KEYS.INVS, invoices);
+        safeSave(KEYS.EXPS, expenses);
       }, [products, opCosts, shareholders, invoices, expenses]);
 
-      // Icons render
+      // lucide
       useEffect(() => {
-        try { window.lucide && window.lucide.createIcons(); } catch {}
-      }, [activeTab, products, invoices, expenses, opCosts, shareholders]);
+        try { if (window.lucide) window.lucide.createIcons(); } catch(e){}
+      }, [activeTab, products, invoices]);
 
-      const opRate = useMemo(() => sumObj(opCosts), [opCosts]);
+      // Operating rate per kg
+      const opRate = useMemo(() => {
+        const vals = Object.values(opCosts || {});
+        return vals.reduce((s, v) => s + toNumber(v, 0), 0);
+      }, [opCosts]);
 
+      // Business analysis for selected range
       const analysis = useMemo(() => {
         const start = new Date(reportRange.start);
         const end = new Date(reportRange.end);
         end.setHours(23, 59, 59, 999);
 
-        const filteredInv = invoices.filter(i => {
+        const invs = (invoices || []).filter(i => {
           const d = new Date(i.date);
           return d >= start && d <= end;
         });
 
-        const filteredExp = expenses.filter(e => {
+        const exps = (expenses || []).filter(e => {
           const d = new Date(e.date);
           return d >= start && d <= end;
         });
@@ -208,143 +215,129 @@
         let rev = 0, kg = 0, paid = 0;
         const prodMap = {};
 
-        filteredInv.forEach(inv => {
-          const invTotal = Number(inv.total) || 0;
+        invs.forEach(inv => {
+          const invTotal = toNumber(inv.total, 0);
           rev += invTotal;
-          paid += Number(inv.paidAmount) || 0;
+          paid += toNumber(inv.paidAmount, 0);
 
           const items = inv.items || {};
           Object.entries(items).forEach(([pid, qty]) => {
-            const q = Number(qty) || 0;
+            const q = toNumber(qty, 0);
             if (q <= 0) return;
+
             kg += q;
 
-            if (!prodMap[pid]) prodMap[pid] = { qty: 0, rev: 0, profit: 0, unitProfit: 0 };
-            const p = products.find(x => x.id === pid);
+            if (!prodMap[pid]) prodMap[pid] = { qty: 0, rev: 0, profit: 0 };
+            const p = (products || []).find(x => x.id === pid);
             if (!p) return;
 
-            const cost = (Number(p.rmCost)||0) + opRate;
-            const unitProfit = (Number(p.price)||0) - cost;
+            const price = toNumber(p.price, 0);
+            const cost = toNumber(p.rmCost, 0) + opRate;
 
             prodMap[pid].qty += q;
-            prodMap[pid].rev += q * (Number(p.price)||0);
-            prodMap[pid].profit += q * unitProfit;
-            prodMap[pid].unitProfit = unitProfit;
+            prodMap[pid].rev += q * price;
+            prodMap[pid].profit += q * (price - cost);
           });
         });
 
-        const expenseTotal = filteredExp.reduce((s, e) => s + (Number(e.amount)||0), 0);
-        const profit = Object.values(prodMap).reduce((s, v) => s + (Number(v.profit)||0), 0);
+        const expenseTotal = exps.reduce((s, e) => s + toNumber(e.amount, 0), 0);
+
+        const grossProfit = Object.values(prodMap).reduce((s, v) => s + toNumber(v.profit, 0), 0);
 
         return {
-          rev, kg, paid,
+          rev,
+          kg,
+          paid,
           receivable: rev - paid,
-          profit,
+          // profit here = profit from product margin only (ขาย - (RM+OpRate))
+          profit: grossProfit,
           prodMap,
-          expenseTotal
+          expenseTotal,
+          invCount: invs.length
         };
       }, [invoices, expenses, products, reportRange, opRate]);
 
-      // Export CSV
       const exportCSV = () => {
-        let csv = `รายงาน BKP Kitchen\nระยะเวลา: ${reportRange.start} ถึง ${reportRange.end}\n\n`;
-        csv += "สินค้า,จำนวน (กก.),ยอดขาย,กำไรสุทธิ,กำไรต่อกก.\n";
+        const lines = [];
+        lines.push(`รายงาน BKP Kitchen`);
+        lines.push(`ระยะเวลา: ${reportRange.start} ถึง ${reportRange.end}`);
+        lines.push('');
+        lines.push('สินค้า,จำนวน(กก.),ยอดขาย,กำไรสุทธิ');
+
         Object.entries(analysis.prodMap).forEach(([id, v]) => {
-          const name = products.find(p=>p.id===id)?.name || id;
-          csv += `${name},${v.qty},${v.rev},${v.profit},${v.unitProfit}\n`;
+          const name = (products.find(p => p.id === id)?.name) || id;
+          lines.push(`${name},${toNumber(v.qty,0)},${toNumber(v.rev,0)},${toNumber(v.profit,0)}`);
         });
 
-        csv += `\nสรุปรวม\nยอดขายรวม,${analysis.rev}\nรับเงินแล้ว,${analysis.paid}\nลูกหนี้ค้างชำระ,${analysis.receivable}\nกำไรจากการขาย (ก่อนบันทึกรายจ่าย),${analysis.profit}\n`;
-
-        csv += `\nส่วนแบ่งกำไรผู้ถือหุ้น\n`;
-        shareholders.forEach(sh => {
-          const amt = analysis.profit * ((Number(sh.percent)||0)/100);
-          csv += `${sh.name},${sh.percent}%,${amt.toFixed(2)}\n`;
+        lines.push('');
+        lines.push(`กำไรสุทธิรวม,${toNumber(analysis.profit,0)}`);
+        lines.push('');
+        lines.push('ส่วนแบ่งกำไร');
+        (shareholders || []).forEach(sh => {
+          const share = toNumber(sh.percent,0) / 100;
+          const amt = toNumber(analysis.profit,0) * share;
+          lines.push(`${sh.name},${toNumber(sh.percent,0)}%,${amt.toFixed(2)}`);
         });
 
-        const blob = new Blob(["\uFEFF" + csv], { type: "text/csv;charset=utf-8;" });
-        const link = document.createElement("a");
+        const csv = "\uFEFF" + lines.join("\n");
+        const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+        const link = document.createElement('a');
         link.href = URL.createObjectURL(blob);
         link.download = `BKP_Report_${reportRange.start}_to_${reportRange.end}.csv`;
+        document.body.appendChild(link);
         link.click();
+        document.body.removeChild(link);
       };
 
-      const requireAdmin = () => {
-        if (isAdmin) return true;
-        const pin = prompt("ใส่รหัส PIN หลังบ้าน:");
-        if (pin === INITIAL_DATA.ADMIN_PIN) {
-          setIsAdmin(true);
-          saveJSON(KEYS.PINOK, true);
-          return true;
-        }
-        alert("PIN ไม่ถูกต้อง");
-        return false;
-      };
-
-      const goTab = (tab) => {
-        // ป้องกันเข้าหลังบ้านบางหน้า
-        const adminTabs = ["settings"];
-        if (adminTabs.includes(tab)) {
-          if (!requireAdmin()) return;
-        }
-        setActiveTab(tab);
-      };
-
-      const resetAll = () => {
-        if (!confirm("ล้างข้อมูลทั้งหมดในเครื่องนี้? (บิล/รายจ่าย/ตั้งค่าทั้งหมด)")) return;
-        localStorage.removeItem(KEYS.PRODS);
-        localStorage.removeItem(KEYS.COSTS);
-        localStorage.removeItem(KEYS.SHARES);
-        localStorage.removeItem(KEYS.INVS);
-        localStorage.removeItem(KEYS.EXPS);
-        localStorage.removeItem(KEYS.PINOK);
-        location.reload();
-      };
-
-      // ---------- Render ----------
+      // -----------------------------
+      // UI
+      // -----------------------------
       return (
         <div className="flex flex-col md:flex-row min-h-screen">
           {/* Sidebar */}
           <nav className="w-full md:w-72 bg-[#0f172a] p-6 flex flex-col no-print shrink-0 border-r border-white/5 shadow-2xl">
-            <div className="flex items-center gap-4 mb-8 px-2">
+            <div className="flex items-center gap-4 mb-10 px-2">
               <div className="bg-blue-600 p-3 rounded-2xl text-white shadow-xl shadow-blue-500/20">
                 <i data-lucide="cooking-pot" className="w-6 h-6"></i>
               </div>
               <div>
-                <h1 className="text-white font-black text-xl tracking-tight">BKP SYSTEM</h1>
-                <span className="text-blue-400 text-[10px] font-bold">Single-file ERP</span>
+                <h1 className="text-white font-bold text-xl tracking-tight">BKP SYSTEM</h1>
+                <span className="text-blue-400 text-[10px] font-bold">ครัวกลางมืออาชีพ</span>
               </div>
             </div>
 
             <div className="flex-1 space-y-1 overflow-y-auto no-scrollbar">
-              <NavItem active={activeTab==="dashboard"} onClick={()=>goTab("dashboard")} icon="layout-dashboard" label="หน้าหลัก (Dashboard)" />
-              <NavItem active={activeTab==="report"} onClick={()=>goTab("report")} icon="file-text" label="รายงานผู้ถือหุ้น" />
-              <NavItem active={activeTab==="settlement"} onClick={()=>goTab("settlement")} icon="calculator" label="ยอดโอนค่าแรงผลิต" />
-              <NavItem active={activeTab==="watchdog"} onClick={()=>goTab("watchdog")} icon="shield-alert" label="เฝ้าระวังกำไร" />
+              <NavItem active={activeTab==='dashboard'} onClick={()=>setActiveTab('dashboard')} icon="layout-dashboard" label="หน้าหลัก (Dashboard)"/>
+              <NavItem active={activeTab==='report'} onClick={()=>setActiveTab('report')} icon="file-text" label="รายงานผู้ถือหุ้น"/>
+              <NavItem active={activeTab==='settlement'} onClick={()=>setActiveTab('settlement')} icon="calculator" label="ยอดโอนค่าแรงผลิต"/>
+              <NavItem active={activeTab==='watchdog'} onClick={()=>setActiveTab('watchdog')} icon="shield-alert" label="เฝ้าระวังกำไร"/>
 
               <div className="pt-6 pb-2 px-4 text-[10px] text-slate-500 font-bold uppercase tracking-widest">การทำงาน</div>
-              <NavItem active={activeTab==="record"} onClick={()=>goTab("record")} icon="shopping-cart" label="ออกบิลใหม่" />
-              <NavItem active={activeTab==="history"} onClick={()=>goTab("history")} icon="history" label="ประวัติลูกหนี้" />
-              <NavItem active={activeTab==="expense"} onClick={()=>goTab("expense")} icon="wallet" label="บันทึกรายจ่าย" />
+              <NavItem active={activeTab==='record'} onClick={()=>setActiveTab('record')} icon="shopping-cart" label="ออกบิลใหม่"/>
+              <NavItem active={activeTab==='history'} onClick={()=>setActiveTab('history')} icon="history" label="ประวัติลูกหนี้"/>
+              <NavItem active={activeTab==='expense'} onClick={()=>setActiveTab('expense')} icon="wallet" label="บันทึกรายจ่าย"/>
 
               <div className="pt-6 pb-2 px-4 text-[10px] text-slate-500 font-bold uppercase tracking-widest">ตั้งค่า</div>
-              <NavItem active={activeTab==="settings"} onClick={()=>goTab("settings")} icon="settings" label="จัดการหุ้น & สินค้า (หลังบ้าน)" />
+              <NavItem active={activeTab==='settings'} onClick={()=>setActiveTab('settings')} icon="settings" label="จัดการหุ้น & สินค้า"/>
             </div>
 
-            <div className="mt-6 space-y-2">
-              <button onClick={resetAll} className="w-full bg-white/5 hover:bg-white/10 text-slate-300 px-4 py-3 rounded-xl text-xs font-bold flex items-center gap-2">
-                <i data-lucide="trash" className="w-4 h-4"></i> ล้างข้อมูลในเครื่องนี้
-              </button>
-              <div className="text-[10px] text-slate-500 px-2">
-                ข้อมูลถูกเก็บในเครื่อง (localStorage) — ถ้าเปิดในเครื่องอื่นข้อมูลจะไม่ตามไป
+            <div className="mt-6 text-[10px] text-slate-500">
+              <div className="flex items-center justify-between">
+                <span>OpRate/kg</span>
+                <span className="font-bold text-slate-300">฿{formatMoney(opRate)}</span>
+              </div>
+              <div className="flex items-center justify-between">
+                <span>บิลในช่วง</span>
+                <span className="font-bold text-slate-300">{analysis.invCount}</span>
               </div>
             </div>
           </nav>
 
           {/* Main */}
           <main className="flex-1 p-4 md:p-8 overflow-y-auto">
-            {/* DASHBOARD */}
-            {activeTab === "dashboard" && (
+
+            {/* Dashboard */}
+            {activeTab==='dashboard' && (
               <div className="space-y-8 animate-in">
                 <header className="flex justify-between items-end border-l-4 border-blue-600 pl-4">
                   <div>
@@ -352,83 +345,78 @@
                     <p className="text-slate-400 text-sm">สถานะการเงินและการขายล่าสุด</p>
                   </div>
                   <div className="no-print bg-white p-2 px-4 rounded-xl border shadow-sm text-xs font-bold text-slate-500 flex items-center gap-2">
-                    <i data-lucide="calendar" className="w-3 h-3 text-blue-500"></i> {new Date().toLocaleDateString("th-TH")}
+                    <i data-lucide="calendar" className="w-3 h-3 text-blue-500"></i>
+                    {new Date().toLocaleDateString('th-TH')}
                   </div>
                 </header>
 
                 <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-                  <StatCard label="เงินสดรับจริง" value={analysis.paid} color="text-green-600" icon="banknote" sub="เข้ากระเป๋าแล้ว" />
-                  <StatCard label="ยอดขายรวม" value={analysis.rev} color="text-slate-900" icon="trending-up" sub="รวมบิลทั้งหมด" />
-                  <StatCard label="ลูกหนี้ค้างชำระ" value={analysis.receivable} color="text-red-500" icon="alert-circle" sub="รอเก็บเงิน" />
-                  <StatCard label="กำไรจากการขาย" value={analysis.profit} color="text-blue-600" icon="dollar-sign" bg="bg-blue-50/50" sub="หัก RM + ต้นทุนต่อกก." />
+                  <StatCard label="เงินสดรับจริง" value={analysis.paid} color="text-green-600" icon="banknote" sub="เข้ากระเป๋าแล้ว"/>
+                  <StatCard label="ยอดขายรวม" value={analysis.rev} color="text-slate-900" icon="trending-up" sub="รวมบิลทั้งหมด"/>
+                  <StatCard label="ลูกหนี้ค้างชำระ" value={analysis.receivable} color="text-red-500" icon="alert-circle" sub="รอเก็บเงิน"/>
+                  <StatCard label="กำไรสุทธิ" value={analysis.profit} color="text-blue-600" icon="dollar-sign" bg="bg-blue-50/50" sub="ขาย - (RM+ค่าแรงต่อกก.)"/>
                 </div>
 
                 <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
                   <div className="lg:col-span-2 glass-card p-6 rounded-3xl shadow-sm h-[350px]">
                     <h3 className="font-bold text-slate-800 mb-4 flex items-center gap-2">
-                      <i data-lucide="area-chart" className="w-4 h-4"></i> แนวโน้มยอดขาย (10 บิลล่าสุด)
+                      <i data-lucide="bar-chart-2" className="w-4 h-4"></i> แนวโน้มยอดขาย (10 รายการล่าสุด)
                     </h3>
                     <div className="h-[250px]">
-                      {AreaChart ? (
+                      {hasCharts ? (
                         <ResponsiveContainer width="100%" height="100%">
-                          <AreaChart data={invoices.slice(-10)}>
+                          <AreaChart data={(invoices||[]).slice(-10)}>
                             <defs>
                               <linearGradient id="cSales" x1="0" y1="0" x2="0" y2="1">
                                 <stop offset="5%" stopColor="#3b82f6" stopOpacity={0.2}/>
                                 <stop offset="95%" stopColor="#3b82f6" stopOpacity={0}/>
                               </linearGradient>
                             </defs>
-                            <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" />
-                            <XAxis dataKey="date" tick={{fontSize:10}} />
+                            <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9"/>
+                            <XAxis dataKey="date" tick={{ fontSize: 10 }}/>
                             <YAxis hide />
                             <Tooltip />
-                            <Area type="monotone" dataKey="total" stroke="#2563eb" strokeWidth={3} fill="url(#cSales)" />
+                            <Area type="monotone" dataKey="total" stroke="#2563eb" strokeWidth={3} fill="url(#cSales)"/>
                           </AreaChart>
                         </ResponsiveContainer>
                       ) : (
-                        <div className="h-full flex items-center justify-center text-slate-400">กำลังโหลดกราฟ...</div>
+                        <div className="h-full flex items-center justify-center text-slate-400">
+                          ไม่สามารถโหลดกราฟได้ (ตรวจสอบการโหลด Recharts)
+                        </div>
                       )}
                     </div>
                   </div>
 
                   <div className="bg-[#0f172a] p-8 rounded-3xl text-white relative overflow-hidden flex flex-col justify-center shadow-lg">
-                    <p className="text-blue-400 font-bold text-xs uppercase mb-2">ต้นทุนต่อกก. (OP Rate)</p>
-                    <h4 className="text-4xl font-black mb-2">฿{money(opRate)}</h4>
-                    <p className="text-slate-400 text-xs mb-6">รวม: {Object.entries(opCosts).map(([k,v])=>`${COST_LABELS[k]||k} ${v}`).join(" + ")}</p>
-                    <div className="pt-6 border-t border-white/10">
-                      <p className="text-slate-400 text-xs">วันนี้ทำได้</p>
-                      <p className="text-2xl font-black">{money(analysis.kg)} Kg</p>
-                    </div>
+                    <p className="text-blue-400 font-bold text-xs uppercase mb-2">พยากรณ์รายรับ (30 วัน)</p>
+                    <h4 className="text-4xl font-black mb-4">
+                      ฿{formatMoney((analysis.rev / Math.max(analysis.invCount, 1)) * 30).split('.')[0]}
+                    </h4>
+                    <p className="text-slate-400 text-xs">คำนวณจากยอดขายเฉลี่ยต่อบิลในช่วงรายงาน</p>
                   </div>
                 </div>
               </div>
             )}
 
-            {/* REPORT */}
-            {activeTab === "report" && (
+            {/* Report */}
+            {activeTab==='report' && (
               <div className="space-y-6 animate-in">
                 <div className="glass-card p-6 rounded-3xl no-print flex gap-4 shadow-sm items-end">
                   <div className="grid grid-cols-2 gap-4 flex-1">
                     <div>
                       <label className="text-xs font-bold text-slate-500">เริ่มวันที่</label>
-                      <input type="date" value={reportRange.start}
-                        onChange={(e)=>setReportRange({...reportRange, start:e.target.value})}
-                        className="input-premium" />
+                      <input type="date" value={reportRange.start} onChange={e=>setReportRange({...reportRange, start:e.target.value})} className="input-premium"/>
                     </div>
                     <div>
                       <label className="text-xs font-bold text-slate-500">ถึงวันที่</label>
-                      <input type="date" value={reportRange.end}
-                        onChange={(e)=>setReportRange({...reportRange, end:e.target.value})}
-                        className="input-premium" />
+                      <input type="date" value={reportRange.end} onChange={e=>setReportRange({...reportRange, end:e.target.value})} className="input-premium"/>
                     </div>
                   </div>
                   <div className="flex gap-2">
-                    <button onClick={exportCSV}
-                      className="bg-green-600 text-white px-4 py-3 rounded-xl font-bold flex items-center gap-2 hover:bg-green-700 text-sm">
+                    <button onClick={exportCSV} className="bg-green-600 text-white px-4 py-3 rounded-xl font-bold flex items-center gap-2 hover:bg-green-700 text-sm">
                       <i data-lucide="download" className="w-4 h-4"></i> CSV
                     </button>
-                    <button onClick={()=>window.print()}
-                      className="bg-slate-900 text-white px-4 py-3 rounded-xl font-bold flex items-center gap-2 hover:scale-105 text-sm">
+                    <button onClick={() => window.print()} className="bg-slate-900 text-white px-4 py-3 rounded-xl font-bold flex items-center gap-2 hover:scale-105 text-sm">
                       <i data-lucide="printer" className="w-4 h-4"></i> พิมพ์
                     </button>
                   </div>
@@ -439,31 +427,12 @@
                     <div>
                       <h1 className="text-3xl font-black text-slate-900">รายงานผลประกอบการ</h1>
                       <p className="text-blue-600 font-bold">ครัวกลาง BKP Partnership</p>
-                      <p className="text-slate-400 text-sm mt-2">ช่วงวันที่: {reportRange.start} ถึง {reportRange.end}</p>
+                      <p className="text-xs text-slate-500 mt-1">ช่วงวันที่: {reportRange.start} ถึง {reportRange.end}</p>
                     </div>
                     <div className="text-right">
-                      <p className="text-xs font-bold text-slate-400">กำไรจากการขาย (ก่อนรายจ่าย)</p>
-                      <h2 className="text-4xl font-black text-slate-900">฿{money(analysis.profit)}</h2>
-                      <p className="text-xs text-slate-400 mt-1">รายจ่ายที่บันทึกในช่วงนี้: ฿{money(analysis.expenseTotal)}</p>
-                    </div>
-                  </div>
-
-                  <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-10">
-                    <div className="p-5 rounded-2xl bg-slate-50 border">
-                      <p className="text-xs font-bold text-slate-500">ยอดขายรวม</p>
-                      <p className="text-2xl font-black">฿{money(analysis.rev)}</p>
-                    </div>
-                    <div className="p-5 rounded-2xl bg-slate-50 border">
-                      <p className="text-xs font-bold text-slate-500">รับเงินแล้ว</p>
-                      <p className="text-2xl font-black text-green-600">฿{money(analysis.paid)}</p>
-                    </div>
-                    <div className="p-5 rounded-2xl bg-slate-50 border">
-                      <p className="text-xs font-bold text-slate-500">ลูกหนี้ค้างชำระ</p>
-                      <p className="text-2xl font-black text-red-600">฿{money(analysis.receivable)}</p>
-                    </div>
-                    <div className="p-5 rounded-2xl bg-slate-50 border">
-                      <p className="text-xs font-bold text-slate-500">ผลิตรวม</p>
-                      <p className="text-2xl font-black">{money(analysis.kg)} Kg</p>
+                      <p className="text-xs font-bold text-slate-400">กำไรสุทธิ (จาก Margin)</p>
+                      <h2 className="text-4xl font-black text-slate-900">฿{formatMoney(analysis.profit).split('.')[0]}</h2>
+                      <p className="text-[11px] text-slate-400 mt-1">* กำไร = ขาย - (RM + OpRate)</p>
                     </div>
                   </div>
 
@@ -478,25 +447,27 @@
                     </thead>
                     <tbody>
                       {Object.entries(analysis.prodMap).length === 0 ? (
-                        <tr><td className="p-6 text-center text-slate-400" colSpan="4">ไม่มีข้อมูลในช่วงวันที่ที่เลือก</td></tr>
-                      ) : Object.entries(analysis.prodMap).map(([pid, val]) => (
-                        <tr key={pid} className="border-b">
-                          <td className="p-4 font-bold">{products.find(x=>x.id===pid)?.name || pid}</td>
-                          <td className="p-4 text-center">{money(val.qty)}</td>
-                          <td className="p-4 text-right">฿{money(val.rev)}</td>
-                          <td className="p-4 text-right font-black text-green-600">฿{money(val.profit)}</td>
-                        </tr>
-                      ))}
+                        <tr><td className="p-4 text-slate-400" colSpan="4">ยังไม่มีข้อมูลในช่วงที่เลือก</td></tr>
+                      ) : (
+                        Object.entries(analysis.prodMap).map(([pid, val]) => (
+                          <tr key={pid} className="border-b">
+                            <td className="p-4 font-bold">{products.find(x=>x.id===pid)?.name || pid}</td>
+                            <td className="p-4 text-center">{toNumber(val.qty,0).toLocaleString()}</td>
+                            <td className="p-4 text-right">฿{formatMoney(val.rev)}</td>
+                            <td className="p-4 text-right font-bold text-green-600">฿{formatMoney(val.profit)}</td>
+                          </tr>
+                        ))
+                      )}
                     </tbody>
                   </table>
 
                   <h3 className="font-bold text-slate-800 mb-6 border-l-4 border-blue-600 pl-3">ส่วนแบ่งกำไรผู้ถือหุ้น</h3>
-                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-10 text-center">
-                    {shareholders.map((sh) => (
-                      <div key={sh.id} className="p-6 border rounded-2xl bg-slate-50">
-                        <p className="text-sm font-bold text-slate-500 mb-2">{sh.name} ({sh.percent}%)</p>
-                        <p className="text-2xl font-black" style={{color:sh.color}}>
-                          ฿{money(analysis.profit * ((Number(sh.percent)||0)/100))}
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-20 text-center">
+                    {shareholders.map((sh,i) => (
+                      <div key={sh.id || i} className="p-6 border rounded-2xl bg-slate-50">
+                        <p className="text-sm font-bold text-slate-500 mb-2">{sh.name} ({toNumber(sh.percent,0)}%)</p>
+                        <p className="text-2xl font-black" style={{color: sh.color || '#0f172a'}}>
+                          ฿{formatMoney(toNumber(analysis.profit,0) * (toNumber(sh.percent,0)/100))}
                         </p>
                       </div>
                     ))}
@@ -505,437 +476,174 @@
               </div>
             )}
 
-            {/* SETTLEMENT */}
-            {activeTab === "settlement" && (
+            {/* Settlement */}
+            {activeTab==='settlement' && (
               <div className="max-w-4xl mx-auto space-y-6 animate-in">
                 <h2 className="text-2xl font-black text-slate-800">สรุปยอดโอนค่าแรง (Settlement)</h2>
                 <div className="glass-card p-8 rounded-3xl shadow-lg">
                   <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
                     <div className="bg-blue-600 p-8 rounded-3xl text-white shadow-lg text-center flex flex-col justify-center">
                       <p className="text-blue-100 text-sm font-bold mb-2">น้ำหนักผลิตรวม (Kg)</p>
-                      <h2 className="text-6xl font-black mb-6">{money(analysis.kg)}</h2>
+                      <h2 className="text-6xl font-black mb-6">{toNumber(analysis.kg,0).toLocaleString()}</h2>
                       <div className="pt-6 border-t border-white/20">
-                        <p className="text-sm mb-1">ยอดโอนจ่ายรวม (kg × opRate)</p>
-                        <h4 className="text-3xl font-black">฿{money(analysis.kg * opRate)}</h4>
+                        <p className="text-sm mb-1">ยอดโอนจ่ายรวม</p>
+                        <h4 className="text-3xl font-black">฿{formatMoney(toNumber(analysis.kg,0) * toNumber(opRate,0)).split('.')[0]}</h4>
                       </div>
                     </div>
-
                     <div className="space-y-3">
-                      {Object.entries(opCosts).map(([k, v]) => (
+                      {Object.entries(opCosts || {}).map(([k,v]) => (
                         <div key={k} className="flex justify-between p-4 bg-white border rounded-2xl shadow-sm">
                           <div>
-                            <p className="font-bold text-sm">{COST_LABELS[k] || k}</p>
-                            <p className="text-xs text-slate-400">{money(analysis.kg)} Kg × {money(v)}</p>
+                            <p className="font-bold text-sm uppercase">{k}</p>
+                            <p className="text-xs text-slate-400">{toNumber(analysis.kg,0)} Kg x {toNumber(v,0)}</p>
                           </div>
-                          <p className="font-black text-lg">฿{money(analysis.kg * (Number(v)||0))}</p>
+                          <p className="font-black text-lg">฿{formatMoney(toNumber(analysis.kg,0) * toNumber(v,0)).split('.')[0]}</p>
                         </div>
                       ))}
-                      <div className="p-4 rounded-2xl bg-slate-50 border">
-                        <p className="text-xs font-bold text-slate-500">รวมต้นทุนต่อกก. (opRate)</p>
-                        <p className="text-2xl font-black text-blue-600">฿{money(opRate)}</p>
-                      </div>
                     </div>
                   </div>
                 </div>
               </div>
             )}
 
-            {/* RECORD INVOICE */}
-            {activeTab === "record" && (
-              <div className="max-w-xl mx-auto space-y-6 animate-in">
-                <h2 className="text-2xl font-black text-slate-800 border-l-4 border-blue-600 pl-4">ออกใบแจ้งหนี้ (Sale)</h2>
-
-                <div className="glass-card p-8 rounded-3xl shadow-xl space-y-6">
-                  <div className="grid grid-cols-2 gap-4">
-                    <div>
-                      <label className="text-xs font-bold text-slate-400 ml-2">วันที่</label>
-                      <input type="date" id="inv-date" defaultValue={new Date().toISOString().split("T")[0]} className="input-premium" />
-                    </div>
-                    <div>
-                      <label className="text-xs font-bold text-slate-400 ml-2">ลูกค้า</label>
-                      <input id="inv-cust" className="input-premium" placeholder="ชื่อลูกค้า..." />
-                    </div>
-                  </div>
-
-                  <div className="space-y-3 max-h-[320px] overflow-y-auto no-scrollbar">
-                    {products.map(p => (
-                      <div key={p.id} className="flex items-center gap-4 p-4 bg-white rounded-2xl border hover:border-blue-500 transition-all">
-                        <div className="flex-1 font-bold">
-                          {p.name} <span className="text-xs text-slate-400">@{money(p.price)}</span>
-                        </div>
-                        <div className="w-28 relative">
-                          <input type="number" step="0.01" min="0" placeholder="0"
-                            data-pid={p.id}
-                            className="inv-item-input w-full p-2 bg-slate-50 rounded-xl text-right font-bold outline-none border border-slate-200 focus:border-blue-300"/>
-                          <span className="absolute right-2 top-2 text-xs text-slate-400">Kg</span>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-
-                  <button
-                    onClick={() => {
-                      const cust = (document.getElementById("inv-cust").value || "").trim();
-                      const date = document.getElementById("inv-date").value;
-                      const items = {};
-                      let total = 0;
-
-                      document.querySelectorAll(".inv-item-input").forEach(input => {
-                        const q = Number(input.value) || 0;
-                        if (q > 0) {
-                          const pid = input.dataset.pid;
-                          items[pid] = q;
-                          const p = products.find(x => x.id === pid);
-                          total += q * (Number(p?.price) || 0);
-                        }
-                      });
-
-                      if (!cust) return alert("กรุณาระบุชื่อลูกค้า");
-                      if (Object.keys(items).length === 0) return alert("กรุณาระบุจำนวนสินค้าอย่างน้อย 1 รายการ");
-
-                      const inv = {
-                        id: Date.now(),
-                        date,
-                        customerName: cust,
-                        items,
-                        total: Number(total.toFixed(2)),
-                        paidAmount: 0,
-                        status: "Unpaid"
-                      };
-
-                      setInvoices([inv, ...invoices]);
-                      setActiveTab("dashboard");
-                    }}
-                    className="w-full bg-blue-600 text-white font-black py-4 rounded-2xl shadow-lg hover:scale-[1.02] transition-all text-lg">
-                    บันทึกบิล
-                  </button>
-                </div>
-              </div>
+            {/* Record Invoice */}
+            {activeTab==='record' && (
+              <RecordInvoice
+                products={products}
+                onSave={(inv) => {
+                  setInvoices([{ ...inv }, ...(invoices || [])]);
+                  setActiveTab('dashboard');
+                }}
+              />
             )}
 
-            {/* HISTORY */}
-            {activeTab === "history" && (
+            {/* History */}
+            {activeTab==='history' && (
               <div className="space-y-6 animate-in">
-                <div className="flex flex-col md:flex-row md:items-end md:justify-between gap-3">
-                  <div>
-                    <h2 className="text-2xl font-black text-slate-800">ประวัติและลูกหนี้ (History)</h2>
-                    <p className="text-slate-400 text-sm">กด “รับเงิน” เพื่อบันทึกการชำระ (รองรับจ่ายบางส่วน)</p>
-                  </div>
-                  <div className="bg-white border rounded-2xl p-4 text-sm font-bold flex gap-3">
-                    <span>ลูกหนี้รวม:</span>
-                    <span className="text-red-600">฿{money(invoices.reduce((s,i)=>s+((Number(i.total)||0)-(Number(i.paidAmount)||0)),0))}</span>
-                  </div>
-                </div>
+                <h2 className="text-2xl font-black text-slate-800">ประวัติและลูกหนี้ (History)</h2>
 
-                <div className="space-y-3">
-                  {invoices.length === 0 ? (
-                    <div className="bg-white p-10 rounded-3xl border text-center text-slate-400">
-                      ยังไม่มีบิล — ไปที่ “ออกบิลใหม่” เพื่อเริ่มบันทึก
-                    </div>
-                  ) : invoices.map(inv => {
-                    const paidAmount = Number(inv.paidAmount) || 0;
-                    const total = Number(inv.total) || 0;
-                    const due = total - paidAmount;
-                    const isPaid = due <= 0.00001;
+                {(invoices || []).length === 0 ? (
+                  <div className="bg-white p-8 rounded-3xl border text-slate-400">ยังไม่มีบิล</div>
+                ) : (
+                  <div className="space-y-3">
+                    {invoices.map(inv => {
+                      const status = inv.status || 'Unpaid';
+                      const isPaid = status === 'Paid';
+                      const isPartial = status === 'Partial';
 
-                    const tone = isPaid ? "green" : (paidAmount > 0 ? "amber" : "red");
-                    const label = isPaid ? "จ่ายแล้ว" : (paidAmount > 0 ? "จ่ายบางส่วน" : "ค้างชำระ");
-
-                    return (
-                      <div key={inv.id} className="bg-white p-5 rounded-3xl border flex flex-col md:flex-row md:items-center md:justify-between gap-4 shadow-sm">
-                        <div className="flex gap-4 items-center">
-                          <div className="bg-slate-100 p-3 rounded-2xl text-center min-w-[70px] font-black text-slate-600">
-                            <p className="text-[10px] uppercase">{thMonthShort(inv.date)}</p>
-                            <p className="text-2xl leading-none">{new Date(inv.date).getDate()}</p>
-                          </div>
-                          <div>
-                            <h4 className="font-black text-lg text-slate-800">{inv.customerName}</h4>
-                            <div className="flex gap-2 items-center mt-1">
-                              <Badge tone={tone}>{label}</Badge>
-                              <span className="text-xs text-slate-400">{thDate(inv.date)}</span>
+                      return (
+                        <div key={inv.id} className="bg-white p-5 rounded-3xl border flex items-center justify-between shadow-sm">
+                          <div className="flex gap-4 items-center">
+                            <div className="bg-slate-100 p-3 rounded-2xl text-center min-w-[70px] font-black text-slate-600">
+                              <p className="text-[10px] uppercase">{new Date(inv.date).toLocaleDateString('th-TH', { month:'short' })}</p>
+                              <p className="text-2xl leading-none">{new Date(inv.date).getDate()}</p>
+                            </div>
+                            <div>
+                              <h4 className="font-bold text-lg text-slate-800">{inv.customerName || '-'}</h4>
+                              <span className={`text-[10px] px-2 py-1 rounded-md font-bold ${
+                                isPaid ? 'bg-green-100 text-green-700' :
+                                isPartial ? 'bg-amber-100 text-amber-700' :
+                                'bg-red-100 text-red-700'
+                              }`}>
+                                {isPaid ? 'จ่ายแล้ว' : isPartial ? 'จ่ายบางส่วน' : 'ค้างชำระ'}
+                              </span>
+                              <p className="text-[11px] text-slate-400 mt-1">
+                                รับแล้ว: ฿{formatMoney(inv.paidAmount || 0)} / ยอดบิล: ฿{formatMoney(inv.total || 0)}
+                              </p>
                             </div>
                           </div>
-                        </div>
 
-                        <div className="flex items-center justify-between md:justify-end gap-6">
-                          <div className="text-right">
-                            <p className="text-xs text-slate-400 font-bold">ยอดบิล</p>
-                            <p className="font-black text-xl">฿{money(total)}</p>
-                            <p className="text-xs text-slate-400">รับแล้ว: ฿{money(paidAmount)} | คงค้าง: <span className="text-red-600 font-black">฿{money(due)}</span></p>
-                          </div>
+                          <div className="text-right flex items-center gap-4">
+                            <div>
+                              <p className="text-xs text-slate-400 font-bold">ยอดบิล</p>
+                              <p className="font-black text-xl">฿{formatMoney(inv.total || 0).split('.')[0]}</p>
+                            </div>
 
-                          {!isPaid && (
-                            <div className="flex gap-2">
+                            {!isPaid && (
                               <button
                                 onClick={() => {
-                                  const amtStr = prompt("ยอดรับชำระ (บาท):");
-                                  if (!amtStr) return;
-                                  const amt = Number(amtStr);
-                                  if (isNaN(amt) || amt <= 0) return alert("กรุณากรอกตัวเลขมากกว่า 0");
-
-                                  setInvoices(invoices.map(i => {
+                                  const amt = prompt("ยอดรับชำระ:");
+                                  const add = toNumber(amt, NaN);
+                                  if (!Number.isFinite(add) || add <= 0) return;
+                                  setInvoices((invoices || []).map(i => {
                                     if (i.id !== inv.id) return i;
-                                    const newPaid = (Number(i.paidAmount)||0) + amt;
-                                    const newStatus = newPaid >= (Number(i.total)||0) ? "Paid" : "Partial";
-                                    return { ...i, paidAmount: Number(newPaid.toFixed(2)), status: newStatus };
+                                    const newPaid = toNumber(i.paidAmount, 0) + add;
+                                    const newStatus = newPaid >= toNumber(i.total,0) ? 'Paid' : 'Partial';
+                                    return { ...i, paidAmount: newPaid, status: newStatus };
                                   }));
                                 }}
                                 className="bg-emerald-500 text-white px-4 py-2 rounded-xl font-bold shadow-md text-xs">
                                 รับเงิน
                               </button>
-
-                              <button
-                                onClick={() => {
-                                  if (!confirm("ลบบิลนี้?")) return;
-                                  setInvoices(invoices.filter(i => i.id !== inv.id));
-                                }}
-                                className="bg-slate-100 text-slate-600 px-3 py-2 rounded-xl font-bold shadow-sm text-xs">
-                                ลบ
-                              </button>
-                            </div>
-                          )}
+                            )}
+                          </div>
                         </div>
-                      </div>
-                    );
-                  })}
-                </div>
+                      );
+                    })}
+                  </div>
+                )}
               </div>
             )}
 
-            {/* EXPENSE */}
-            {activeTab === "expense" && (
-              <div className="max-w-xl mx-auto space-y-6 animate-in py-10">
-                <div className="glass-card p-8 rounded-3xl shadow-lg">
-                  <h2 className="text-xl font-black text-red-600 mb-6 flex items-center gap-2">
-                    <i data-lucide="wallet" className="w-5 h-5"></i> บันทึกรายจ่าย
-                  </h2>
-
-                  <div className="grid grid-cols-2 gap-4 mb-4">
-                    <div>
-                      <label className="text-xs font-bold text-slate-500">วันที่</label>
-                      <input type="date" id="ex-date" defaultValue={new Date().toISOString().split("T")[0]} className="input-premium" />
-                    </div>
-                    <div>
-                      <label className="text-xs font-bold text-slate-500">ยอดเงิน</label>
-                      <input type="number" step="0.01" id="ex-amt" className="input-premium text-red-600 font-black text-xl" placeholder="0.00" />
-                    </div>
-                  </div>
-
-                  <textarea id="ex-note" className="input-premium h-24 mb-4" placeholder="รายละเอียดค่าใช้จ่าย... เช่น ค่าวัตถุดิบเพิ่ม, ค่าแพ็ค, ค่าขนส่ง"></textarea>
-
-                  <button
-                    onClick={() => {
-                      const amt = Number(document.getElementById("ex-amt").value);
-                      const date = document.getElementById("ex-date").value;
-                      const note = (document.getElementById("ex-note").value || "").trim();
-                      if (isNaN(amt) || amt <= 0) return alert("กรุณากรอกยอดเงินมากกว่า 0");
-                      setExpenses([...expenses, { id: Date.now(), date, amount: Number(amt.toFixed(2)), note }]);
-                      setActiveTab("dashboard");
-                    }}
-                    className="w-full bg-red-600 text-white font-black py-4 rounded-2xl shadow-lg hover:bg-red-700 transition-all">
-                    บันทึก
-                  </button>
-
-                  <div className="mt-6 border-t pt-6">
-                    <h3 className="font-black text-slate-800 mb-3">รายการรายจ่ายล่าสุด</h3>
-                    <div className="space-y-2 max-h-64 overflow-y-auto no-scrollbar">
-                      {expenses.slice().reverse().slice(0,8).map(e=>(
-                        <div key={e.id} className="bg-white border rounded-2xl p-4 flex justify-between items-start gap-4">
-                          <div>
-                            <p className="text-xs text-slate-400 font-bold">{thDate(e.date)}</p>
-                            <p className="font-bold">{e.note || "—"}</p>
-                          </div>
-                          <div className="text-right">
-                            <p className="font-black text-red-600">฿{money(e.amount)}</p>
-                            <button
-                              onClick={()=>{
-                                if (!confirm("ลบรายการนี้?")) return;
-                                setExpenses(expenses.filter(x=>x.id!==e.id));
-                              }}
-                              className="text-xs font-bold text-slate-500 hover:text-red-600 mt-1">
-                              ลบ
-                            </button>
-                          </div>
-                        </div>
-                      ))}
-                      {expenses.length===0 && <div className="text-slate-400 text-sm text-center py-6">ยังไม่มีรายจ่าย</div>}
-                    </div>
-                  </div>
-                </div>
-              </div>
+            {/* Expense */}
+            {activeTab==='expense' && (
+              <ExpenseForm
+                onSave={(exp) => {
+                  setExpenses([...(expenses || []), exp]);
+                  setActiveTab('dashboard');
+                }}
+              />
             )}
 
-            {/* SETTINGS (ADMIN) */}
-            {activeTab === "settings" && (
-              <div className="space-y-10 animate-in max-w-4xl mx-auto pb-20">
-                <div className="bg-white border rounded-3xl p-6 flex items-center justify-between">
-                  <div>
-                    <h3 className="text-xl font-black">หลังบ้าน (Admin)</h3>
-                    <p className="text-slate-400 text-sm">ปรับสินค้า/ราคาขาย/ทุน RM/ผู้ถือหุ้น/ต้นทุนต่อกก.</p>
-                  </div>
-                  <button
-                    onClick={()=>{
-                      setIsAdmin(false);
-                      saveJSON(KEYS.PINOK, false);
-                      alert("ออกจากโหมดหลังบ้านแล้ว");
-                      setActiveTab("dashboard");
-                    }}
-                    className="bg-slate-900 text-white px-4 py-3 rounded-2xl font-black text-sm flex gap-2 items-center">
-                    <i data-lucide="log-out" className="w-4 h-4"></i> ออกจากหลังบ้าน
-                  </button>
-                </div>
-
-                <section className="bg-white border rounded-3xl p-6">
-                  <h3 className="text-lg font-black text-slate-800 mb-4 border-l-4 border-blue-600 pl-3">ตั้งค่าสินค้า (Products)</h3>
-                  <div className="space-y-3">
-                    {products.map((p, idx) => (
-                      <div key={p.id} className="bg-slate-50 p-4 rounded-2xl border flex flex-col md:flex-row md:items-center gap-4">
-                        <div className="flex items-center gap-3 flex-1">
-                          <div className="w-10 h-10 rounded-xl flex items-center justify-center text-white font-black" style={{backgroundColor:p.color}}>
-                            {p.id.replace("p","")}
-                          </div>
-                          <input
-                            value={p.name}
-                            onChange={(e)=>{
-                              const n=[...products]; n[idx]={...n[idx], name:e.target.value}; setProducts(n);
-                            }}
-                            className="flex-1 bg-white border rounded-xl px-3 py-2 font-bold outline-none"/>
-                        </div>
-
-                        <div className="grid grid-cols-2 md:grid-cols-2 gap-3">
-                          <div className="w-full md:w-40">
-                            <label className="text-[10px] font-black text-slate-500 block">ทุน RM ต่อกก.</label>
-                            <input type="number" step="0.01" value={p.rmCost}
-                              onChange={(e)=>{
-                                const n=[...products]; n[idx]={...n[idx], rmCost:Number(e.target.value)||0}; setProducts(n);
-                              }}
-                              className="w-full p-2 bg-white border rounded-xl font-black text-center"/>
-                          </div>
-
-                          <div className="w-full md:w-40">
-                            <label className="text-[10px] font-black text-slate-500 block">ราคาขาย ต่อกก.</label>
-                            <input type="number" step="0.01" value={p.price}
-                              onChange={(e)=>{
-                                const n=[...products]; n[idx]={...n[idx], price:Number(e.target.value)||0}; setProducts(n);
-                              }}
-                              className="w-full p-2 bg-white border rounded-xl font-black text-center text-blue-600"/>
-                          </div>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                </section>
-
-                <section className="bg-white border rounded-3xl p-6">
-                  <h3 className="text-lg font-black text-slate-800 mb-4 border-l-4 border-emerald-500 pl-3">ผู้ถือหุ้น (Shareholders)</h3>
-                  <div className="space-y-3">
-                    {shareholders.map((sh, idx) => (
-                      <div key={sh.id} className="bg-slate-50 p-4 rounded-2xl border flex items-center gap-3">
-                        <div className="w-8 h-8 rounded-full" style={{backgroundColor:sh.color}}></div>
-                        <input
-                          value={sh.name}
-                          onChange={(e)=>{
-                            const n=[...shareholders]; n[idx]={...n[idx], name:e.target.value}; setShareholders(n);
-                          }}
-                          className="flex-1 bg-white border rounded-xl px-3 py-2 font-black outline-none"/>
-                        <div className="w-28">
-                          <input type="number" value={sh.percent}
-                            onChange={(e)=>{
-                              const n=[...shareholders]; n[idx]={...n[idx], percent:Number(e.target.value)||0}; setShareholders(n);
-                            }}
-                            className="w-full p-2 bg-white border rounded-xl font-black text-center text-emerald-600"/>
-                          <div className="text-[10px] text-slate-500 font-bold text-center mt-1">%</div>
-                        </div>
-                        <button
-                          onClick={()=>setShareholders(shareholders.filter(x=>x.id!==sh.id))}
-                          className="text-red-500 hover:text-red-700">
-                          <i data-lucide="trash-2" className="w-5 h-5"></i>
-                        </button>
-                      </div>
-                    ))}
-                    <div className={`text-center text-xs font-black ${shareholders.reduce((s,h)=>s+(Number(h.percent)||0),0)===100 ? "text-green-600" : "text-red-600"}`}>
-                      รวมเปอร์เซ็นต์: {shareholders.reduce((s,h)=>s+(Number(h.percent)||0),0)}% (ต้องครบ 100)
-                    </div>
-
-                    <div className="flex gap-2 justify-center pt-2">
-                      <button
-                        onClick={()=>setShareholders([...shareholders, { id: "sh"+Date.now(), name: "เพิ่มใหม่", percent: 0, color: "#94a3b8" }])}
-                        className="bg-slate-900 text-white px-4 py-2 rounded-xl font-black text-sm">
-                        + เพิ่มผู้ถือหุ้น
-                      </button>
-                    </div>
-                  </div>
-                </section>
-
-                <section className="bg-white border rounded-3xl p-6">
-                  <h3 className="text-lg font-black text-slate-800 mb-4 border-l-4 border-amber-500 pl-3">ต้นทุนต่อกก. (Operating Costs / Kg)</h3>
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    {Object.entries(opCosts).map(([k,v]) => (
-                      <div key={k} className="bg-slate-50 p-4 rounded-2xl border flex items-center justify-between gap-4">
-                        <div>
-                          <p className="font-black text-slate-800">{COST_LABELS[k] || k}</p>
-                          <p className="text-xs text-slate-400 font-bold">ตั้งค่าเป็น “บาท/กก.”</p>
-                        </div>
-                        <input
-                          type="number"
-                          step="0.01"
-                          value={v}
-                          onChange={(e)=>setOpCosts({...opCosts, [k]: Number(e.target.value)||0})}
-                          className="w-28 p-2 bg-white border rounded-xl font-black text-center text-amber-600"/>
-                      </div>
-                    ))}
-                  </div>
-
-                  <div className="mt-5 p-5 bg-amber-50 border border-amber-200 rounded-2xl flex items-center justify-between">
-                    <div>
-                      <p className="text-xs font-black text-amber-700">รวมต้นทุนต่อกก. (opRate)</p>
-                      <p className="text-slate-500 text-xs font-bold">ใช้ในการคิดกำไรต่อกก. และ Settlement</p>
-                    </div>
-                    <p className="text-3xl font-black text-amber-700">฿{money(opRate)}</p>
-                  </div>
-                </section>
-              </div>
+            {/* Settings */}
+            {activeTab==='settings' && (
+              <Settings
+                products={products}
+                setProducts={setProducts}
+                opCosts={opCosts}
+                setOpCosts={setOpCosts}
+                shareholders={shareholders}
+                setShareholders={setShareholders}
+              />
             )}
 
-            {/* WATCHDOG */}
-            {activeTab === "watchdog" && (
+            {/* Watchdog */}
+            {activeTab==='watchdog' && (
               <div className="space-y-6 animate-in">
-                <div className="flex flex-col md:flex-row md:items-end md:justify-between gap-3">
-                  <div>
-                    <h2 className="text-2xl font-black text-slate-800 border-l-4 border-red-500 pl-3">Margin Watchdog</h2>
-                    <p className="text-slate-400 text-sm">เตือนเมื่อกำไรขั้นต้น (%) ต่ำกว่าเกณฑ์ที่ตั้งไว้</p>
-                  </div>
-
-                  <div className="bg-white border rounded-2xl p-4 flex items-center gap-3">
-                    <span className="text-xs font-black text-slate-500">เกณฑ์เตือน</span>
-                    <span className="text-sm font-black text-red-600">&lt; 15%</span>
-                    <span className="text-xs text-slate-400">(ปรับในโค้ดได้)</span>
-                  </div>
-                </div>
+                <h2 className="text-2xl font-black text-slate-800 border-l-4 border-red-500 pl-3">Margin Watchdog</h2>
+                <p className="text-sm text-slate-500">
+                  เกณฑ์เตือน: Margin &lt; 15% (คำนวณจาก ราคาขาย - (RM + OpRate))
+                </p>
 
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                   {products.map(p => {
-                    const price = Number(p.price)||0;
-                    const cost = (Number(p.rmCost)||0) + opRate;
-                    const unitProfit = price - cost;
-                    const margin = price > 0 ? (unitProfit / price) * 100 : 0;
+                    const price = toNumber(p.price, 0);
+                    const cost = toNumber(p.rmCost, 0) + toNumber(opRate, 0);
+                    const profitPerKg = price - cost;
+                    const margin = price > 0 ? (profitPerKg / price) * 100 : 0;
                     const isLow = margin < 15;
+
                     return (
-                      <div key={p.id} className={`p-6 rounded-3xl border-2 transition-all ${isLow ? "bg-red-50 border-red-500" : "bg-white border-slate-100"}`}>
+                      <div key={p.id} className={`p-6 rounded-3xl border-2 transition-all ${isLow ? 'bg-red-50 border-red-500' : 'bg-white border-slate-100'}`}>
                         <div className="flex justify-between items-start mb-4">
-                          <h4 className="font-black text-lg">{p.name}</h4>
+                          <h4 className="font-bold text-lg">{p.name}</h4>
                           {isLow && <i data-lucide="alert-triangle" className="text-red-600 w-6 h-6 animate-bounce"></i>}
                         </div>
 
-                        <p className={`text-4xl font-black ${isLow ? "text-red-600" : "text-slate-900"}`}>{margin.toFixed(1)}%</p>
-                        <p className="text-xs font-black text-slate-400 mt-2">กำไรต่อกก.</p>
-                        <p className="text-xl font-black text-green-600">฿{money(unitProfit)}</p>
-
-                        <div className="mt-4 pt-4 border-t text-xs text-slate-500 font-bold space-y-1">
-                          <div className="flex justify-between"><span>ราคาขาย</span><span>฿{money(price)}</span></div>
-                          <div className="flex justify-between"><span>ทุน RM</span><span>฿{money(p.rmCost)}</span></div>
-                          <div className="flex justify-between"><span>ต้นทุนต่อกก.</span><span>฿{money(opRate)}</span></div>
-                          <div className="flex justify-between text-slate-800"><span>รวมต้นทุน</span><span>฿{money(cost)}</span></div>
+                        <p className={`text-4xl font-black ${isLow ? 'text-red-600' : 'text-slate-900'}`}>{margin.toFixed(1)}%</p>
+                        <div className="mt-3 text-sm">
+                          <div className="flex justify-between text-slate-500">
+                            <span>กำไร/กก.</span>
+                            <span className="font-black text-slate-800">฿{formatMoney(profitPerKg)}</span>
+                          </div>
+                          <div className="flex justify-between text-slate-500">
+                            <span>ราคาขาย</span>
+                            <span className="font-bold">฿{formatMoney(price)}</span>
+                          </div>
+                          <div className="flex justify-between text-slate-500">
+                            <span>ต้นทุนรวม</span>
+                            <span className="font-bold">฿{formatMoney(cost)}</span>
+                          </div>
                         </div>
                       </div>
                     );
@@ -943,13 +651,310 @@
                 </div>
               </div>
             )}
+
           </main>
         </div>
       );
     };
 
-    // Render
-    ReactDOM.createRoot(document.getElementById("root")).render(<App/>);
+    // -----------------------------
+    // Components
+    // -----------------------------
+    const NavItem = ({ active, onClick, icon, label }) => (
+      <button onClick={onClick} className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-all ${
+        active ? 'sidebar-active text-white' : 'text-slate-400 hover:bg-white/5 hover:text-slate-200'
+      }`}>
+        <i data-lucide={icon} className="w-5 h-5"></i>
+        <span className="text-sm font-bold">{label}</span>
+      </button>
+    );
+
+    const StatCard = ({ label, value, color, icon, bg="bg-white", sub }) => (
+      <div className={`p-6 rounded-3xl border border-slate-200 glass-card shadow-sm ${bg}`}>
+        <div className="flex justify-between items-center mb-4">
+          <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">{label}</p>
+          <div className="p-2 bg-slate-50 rounded-xl text-slate-300"><i data-lucide={icon} className="w-4 h-4"></i></div>
+        </div>
+        <h3 className={`text-2xl font-black ${color} tracking-tight`}>฿{formatMoney(value).split('.')[0]}</h3>
+        <p className="text-[9px] font-bold text-slate-300 uppercase mt-1">{sub}</p>
+      </div>
+    );
+
+    const RecordInvoice = ({ products, onSave }) => {
+      const dateRef = useRef(null);
+      const custRef = useRef(null);
+
+      useEffect(() => {
+        try { if (window.lucide) window.lucide.createIcons(); } catch(e){}
+      }, []);
+
+      return (
+        <div className="max-w-xl mx-auto space-y-6 animate-in">
+          <h2 className="text-2xl font-black text-slate-800 border-l-4 border-blue-600 pl-4">ออกใบแจ้งหนี้ (Sale)</h2>
+
+          <div className="glass-card p-8 rounded-3xl shadow-xl space-y-6">
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <label className="text-xs font-bold text-slate-400 ml-2">วันที่</label>
+                <input ref={dateRef} type="date" defaultValue={new Date().toISOString().split('T')[0]} className="input-premium" />
+              </div>
+              <div>
+                <label className="text-xs font-bold text-slate-400 ml-2">ลูกค้า</label>
+                <input ref={custRef} className="input-premium" placeholder="ชื่อลูกค้า..." />
+              </div>
+            </div>
+
+            <div className="space-y-3 max-h-[300px] overflow-y-auto">
+              {products.map(p => (
+                <div key={p.id} className="flex items-center gap-4 p-4 bg-white rounded-2xl border hover:border-blue-500 transition-all">
+                  <div className="flex-1 font-bold">{p.name} <span className="text-xs text-slate-400">@{p.price}</span></div>
+                  <div className="w-24 relative">
+                    <input
+                      type="number"
+                      placeholder="0"
+                      data-pid={p.id}
+                      className="inv-item-input w-full p-2 bg-slate-50 rounded-xl text-right font-bold outline-none"
+                    />
+                    <span className="absolute right-2 top-1.5 text-xs text-slate-400">Kg</span>
+                  </div>
+                </div>
+              ))}
+            </div>
+
+            <button
+              onClick={() => {
+                const cust = (custRef.current?.value || '').trim();
+                const date = (dateRef.current?.value || new Date().toISOString().split('T')[0]);
+
+                const items = {};
+                let total = 0;
+
+                document.querySelectorAll('.inv-item-input').forEach(input => {
+                  const q = toNumber(input.value, 0);
+                  if (q > 0) {
+                    const pid = input.dataset.pid;
+                    items[pid] = q;
+                    const p = products.find(x => x.id === pid);
+                    total += q * toNumber(p?.price, 0);
+                  }
+                });
+
+                if (!cust) return alert("กรุณาระบุชื่อลูกค้า");
+                if (total <= 0) return alert("กรุณาใส่จำนวนสินค้าอย่างน้อย 1 รายการ");
+
+                const inv = {
+                  id: Date.now(),
+                  date,
+                  customerName: cust,
+                  items,
+                  total,
+                  status: 'Unpaid',
+                  paidAmount: 0
+                };
+
+                onSave(inv);
+              }}
+              className="w-full bg-blue-600 text-white font-black py-4 rounded-2xl shadow-lg hover:scale-105 transition-all text-lg">
+              บันทึกบิล
+            </button>
+          </div>
+        </div>
+      );
+    };
+
+    const ExpenseForm = ({ onSave }) => {
+      const dateRef = useRef(null);
+      const amtRef = useRef(null);
+      const noteRef = useRef(null);
+
+      useEffect(() => {
+        try { if (window.lucide) window.lucide.createIcons(); } catch(e){}
+      }, []);
+
+      return (
+        <div className="max-w-xl mx-auto space-y-6 animate-in py-10">
+          <div className="glass-card p-8 rounded-3xl shadow-lg">
+            <h2 className="text-xl font-black text-red-600 mb-6 flex items-center gap-2">
+              <i data-lucide="wallet"></i> บันทึกรายจ่าย
+            </h2>
+
+            <div className="grid grid-cols-2 gap-4 mb-4">
+              <div>
+                <label className="text-xs font-bold text-slate-500">วันที่</label>
+                <input ref={dateRef} type="date" defaultValue={new Date().toISOString().split('T')[0]} className="input-premium" />
+              </div>
+              <div>
+                <label className="text-xs font-bold text-slate-500">ยอดเงิน</label>
+                <input ref={amtRef} type="number" className="input-premium text-red-600 font-black text-xl" placeholder="0.00" />
+              </div>
+            </div>
+
+            <textarea ref={noteRef} className="input-premium h-24 mb-4" placeholder="รายละเอียดค่าใช้จ่าย..."></textarea>
+
+            <button
+              onClick={() => {
+                const amount = toNumber(amtRef.current?.value, NaN);
+                if (!Number.isFinite(amount) || amount <= 0) return alert("กรุณาใส่ยอดเงินให้ถูกต้อง");
+
+                const exp = {
+                  id: Date.now(),
+                  date: (dateRef.current?.value || new Date().toISOString().split('T')[0]),
+                  amount,
+                  note: (noteRef.current?.value || '').trim()
+                };
+                onSave(exp);
+              }}
+              className="w-full bg-red-600 text-white font-black py-4 rounded-2xl shadow-lg hover:bg-red-700 transition-all">
+              บันทึก
+            </button>
+          </div>
+        </div>
+      );
+    };
+
+    const Settings = ({ products, setProducts, opCosts, setOpCosts, shareholders, setShareholders }) => {
+      const totalShare = useMemo(() => (shareholders || []).reduce((s, h) => s + toNumber(h.percent, 0), 0), [shareholders]);
+
+      useEffect(() => {
+        try { if (window.lucide) window.lucide.createIcons(); } catch(e){}
+      }, [shareholders, products]);
+
+      return (
+        <div className="space-y-10 animate-in max-w-4xl mx-auto pb-20">
+          {/* Products */}
+          <section>
+            <h3 className="text-lg font-black text-slate-800 mb-4 border-l-4 border-blue-600 pl-3">ตั้งค่าสินค้า (Products)</h3>
+            <div className="space-y-3">
+              {products.map((p, idx) => (
+                <div key={p.id} className="bg-white p-4 rounded-2xl border flex items-center gap-4 shadow-sm">
+                  <div className="w-10 h-10 rounded-xl flex items-center justify-center text-white font-bold" style={{backgroundColor:p.color || '#64748b'}}>
+                    {String(p.id).replace('p','')}
+                  </div>
+                  <div className="flex-1 font-bold text-slate-700">{p.name}</div>
+
+                  <div className="flex gap-2">
+                    <div className="w-28">
+                      <label className="text-[9px] font-bold text-slate-400 block text-center">ทุน RM</label>
+                      <input
+                        type="number"
+                        value={toNumber(p.rmCost,0)}
+                        onChange={e => {
+                          const n = [...products];
+                          n[idx] = { ...n[idx], rmCost: toNumber(e.target.value, 0) };
+                          setProducts(n);
+                        }}
+                        className="w-full p-2 bg-slate-50 rounded-xl font-bold text-center"
+                      />
+                    </div>
+
+                    <div className="w-28">
+                      <label className="text-[9px] font-bold text-slate-400 block text-center">ราคาขาย</label>
+                      <input
+                        type="number"
+                        value={toNumber(p.price,0)}
+                        onChange={e => {
+                          const n = [...products];
+                          n[idx] = { ...n[idx], price: toNumber(e.target.value, 0) };
+                          setProducts(n);
+                        }}
+                        className="w-full p-2 bg-slate-50 rounded-xl font-bold text-center text-blue-600"
+                      />
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </section>
+
+          {/* OpCosts */}
+          <section>
+            <h3 className="text-lg font-black text-slate-800 mb-4 border-l-4 border-slate-900 pl-3">ต้นทุนแฝงต่อกิโล (OpCosts)</h3>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+              {Object.entries(opCosts || {}).map(([k,v]) => (
+                <div key={k} className="bg-white p-4 rounded-2xl border flex items-center justify-between shadow-sm">
+                  <div>
+                    <p className="font-black uppercase text-sm">{k}</p>
+                    <p className="text-xs text-slate-400">บาท/กก.</p>
+                  </div>
+                  <input
+                    type="number"
+                    value={toNumber(v,0)}
+                    onChange={e => setOpCosts({ ...(opCosts||{}), [k]: toNumber(e.target.value,0) })}
+                    className="w-28 p-2 bg-slate-50 rounded-xl font-black text-center text-slate-900"
+                  />
+                </div>
+              ))}
+            </div>
+          </section>
+
+          {/* Shareholders */}
+          <section>
+            <div className="flex justify-between items-center mb-4 border-l-4 border-emerald-500 pl-3">
+              <h3 className="text-lg font-black text-slate-800">ผู้ถือหุ้น (Shareholders)</h3>
+              <button
+                onClick={() => setShareholders([...(shareholders||[]), { id:'sh'+Date.now(), name:'เพิ่มใหม่', percent: 0, color:'#94a3b8' }])}
+                className="bg-slate-900 text-white px-3 py-1 rounded-lg text-xs font-bold">
+                + เพิ่ม
+              </button>
+            </div>
+
+            <div className="space-y-3">
+              {(shareholders||[]).map((sh, idx) => (
+                <div key={sh.id || idx} className="bg-white p-4 rounded-2xl border flex items-center gap-4 shadow-sm">
+                  <div className="w-8 h-8 rounded-full" style={{backgroundColor:sh.color || '#94a3b8'}}></div>
+
+                  <div className="flex-1 font-bold">
+                    <input
+                      value={sh.name || ''}
+                      onChange={e => {
+                        const n = [...shareholders];
+                        n[idx] = { ...n[idx], name: e.target.value };
+                        setShareholders(n);
+                      }}
+                      className="bg-transparent border-none outline-none w-full"
+                    />
+                  </div>
+
+                  <div className="w-24">
+                    <input
+                      type="number"
+                      value={toNumber(sh.percent,0)}
+                      onChange={e => {
+                        const n = [...shareholders];
+                        n[idx] = { ...n[idx], percent: toNumber(e.target.value,0) };
+                        setShareholders(n);
+                      }}
+                      className="w-full p-2 bg-slate-50 rounded-xl font-bold text-center text-emerald-600"
+                    />
+                  </div>
+
+                  <button
+                    onClick={() => setShareholders((shareholders||[]).filter((_, i) => i !== idx))}
+                    className="text-red-400">
+                    <i data-lucide="trash-2" className="w-5 h-5"></i>
+                  </button>
+                </div>
+              ))}
+
+              <div className={`text-center text-xs font-bold ${totalShare===100 ? 'text-green-500' : 'text-red-500'}`}>
+                รวมเปอร์เซ็นต์: {totalShare}% (ต้องครบ 100)
+              </div>
+            </div>
+          </section>
+        </div>
+      );
+    };
+
+    // -----------------------------
+    // Mount
+    // -----------------------------
+    const rootEl = document.getElementById('root');
+    const root = ReactDOM.createRoot(rootEl);
+    root.render(
+      <ErrorBoundary>
+        <App />
+      </ErrorBoundary>
+    );
   </script>
 </body>
 </html>
