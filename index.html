@@ -1,213 +1,255 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="th">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>BKP Kitchen ERP (Single-File)</title>
 
   <!-- Tailwind + Font -->
   <script src="https://cdn.tailwindcss.com"></script>
   <link href="https://fonts.googleapis.com/css2?family=Sarabun:wght@300;400;600;700;800&display=swap" rel="stylesheet">
 
-  <style>
-    body { font-family: 'Sarabun', sans-serif; background-color: #f1f5f9; margin: 0; }
-    .sidebar-active { background: #2563eb; color: white; box-shadow: 0 10px 15px -3px rgba(37, 99, 235, 0.3); }
-    .glass-card { background: rgba(255, 255, 255, 0.95); backdrop-filter: blur(10px); border: 1px solid rgba(226, 232, 240, 0.8); }
-    .input-premium{
-      width:100%; padding: 1rem; border-radius: 1rem; border: none;
-      background-color:#f8fafc; font-weight: 700; box-shadow: inset 0 2px 4px 0 rgba(0,0,0,0.05);
-      outline:none; transition: all .2s;
-    }
-    .input-premium:focus { box-shadow: 0 0 0 2px #3b82f6; background-color: #ffffff; }
-    .no-scrollbar::-webkit-scrollbar { display: none; }
-    @media print {
-      .no-print { display: none !important; }
-      body { background: white; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
-      main { padding: 0 !important; margin: 0 !important; }
-    }
-    .animate-in { animation: fadeIn 0.4s ease-out; }
-    @keyframes fadeIn { from { opacity: 0; transform: translateY(10px);} to { opacity: 1; transform: translateY(0);} }
-  </style>
+  <!-- React (UMD) -->
+  <script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+  <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
 
-  <!-- Libraries (ต้องตามลำดับ) -->
-  <script crossorigin src="https://unpkg.com/react@18.2.0/umd/react.production.min.js"></script>
-  <script crossorigin src="https://unpkg.com/react-dom@18.2.0/umd/react-dom.production.min.js"></script>
-  <script src="https://unpkg.com/prop-types@15.8.1/prop-types.min.js"></script>
-  <script src="https://unpkg.com/recharts@2.12.7/umd/Recharts.js"></script>
+  <!-- Chart.js (for graphs, lighter + stable on GH Pages) -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+
+  <!-- Lucide Icons -->
   <script src="https://unpkg.com/lucide@latest"></script>
-  <script src="https://unpkg.com/@babel/standalone@7.23.11/babel.min.js"></script>
+
+  <style>
+    body { font-family: 'Sarabun', sans-serif; background:#f1f5f9; margin:0; }
+    .glass-card { background: rgba(255,255,255,0.95); backdrop-filter: blur(10px); border: 1px solid rgba(226,232,240,.9); }
+    .sidebar-active { background:#2563eb; color:#fff; box-shadow:0 10px 15px -3px rgba(37,99,235,.25); }
+    .input-premium{ width:100%; padding:1rem; border-radius:1rem; border:1px solid #e2e8f0; background:#f8fafc; font-weight:700; outline:none; transition:.15s; }
+    .input-premium:focus{ box-shadow:0 0 0 2px rgba(59,130,246,.55); background:#fff; }
+    .no-scrollbar::-webkit-scrollbar{ display:none; }
+    @media print { .no-print{ display:none !important; } body{ background:#fff; -webkit-print-color-adjust:exact; } main{ padding:0 !important; margin:0 !important; } }
+    .animate-in{ animation: fadeIn .35s ease-out; }
+    @keyframes fadeIn { from{ opacity:0; transform: translateY(10px);} to{ opacity:1; transform: translateY(0);} }
+    .mono{ font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace; }
+  </style>
 </head>
 
 <body class="text-slate-900">
   <div id="root">
-    <!-- Loading Screen (จะหายเมื่อ React render สำเร็จ) -->
+    <!-- Loader fallback (will be replaced when app mounts) -->
     <div class="h-screen flex flex-col items-center justify-center bg-[#0f172a] text-white">
       <div class="animate-spin rounded-full h-16 w-16 border-t-4 border-blue-500 mb-6 shadow-2xl"></div>
       <h1 class="text-2xl font-black tracking-widest uppercase animate-pulse">กำลังโหลดระบบ BKP...</h1>
-      <p class="text-slate-400 text-sm mt-4">หากค้างนานเกิน 10 วินาที ให้กดรีเฟรชหน้าจอ</p>
-      <p class="text-slate-500 text-xs mt-2">ถ้ายังค้าง: เปิด F12 → Console แล้วส่ง error มาได้</p>
+      <p class="text-slate-400 text-sm mt-4">ถ้าค้างนานเกิน 10 วินาที กดรีเฟรช (Cmd+Shift+R)</p>
     </div>
   </div>
 
-  <script type="text/babel">
-    const { useState, useEffect, useMemo, useRef } = React;
-
-    // -----------------------------
-    // 1) Recharts Safeguard
-    // -----------------------------
-    const RC = window.Recharts || {};
-    const {
-      BarChart, Bar, AreaChart, Area, XAxis, YAxis, CartesianGrid,
-      Tooltip, ResponsiveContainer, Cell, PieChart, Pie, Legend
-    } = RC;
-
-    const hasCharts = !!(ResponsiveContainer && AreaChart && Area && XAxis && CartesianGrid && Tooltip);
-
-    // -----------------------------
-    // 2) Master Data
-    // -----------------------------
-    const INITIAL_DATA = {
-      PRODUCTS: [
-        { id: 'p1', name: 'น้ำยำปลาร้า', rmCost: 50.79, price: 160, color: '#f43f5e' },
-        { id: 'p2', name: 'ซอสผัดไทย', rmCost: 59.27, price: 150, color: '#f59e0b' },
-        { id: 'p3', name: 'น้ำจิ้มแจ่ว', rmCost: 79.32, price: 140, color: '#10b981' },
-        { id: 'p4', name: 'ซอสหมักไก่', rmCost: 105.55, price: 160, color: '#3b82f6' },
-        { id: 'p5', name: 'น้ำส้มตำ', rmCost: 74.72, price: 120, color: '#8b5cf6' }
-      ],
-      SHAREHOLDERS: [
-        { id: 's1', name: 'บี', percent: 50, color: '#3b82f6' },
-        { id: 's2', name: 'กล้วย', percent: 25, color: '#10b981' },
-        { id: 's3', name: 'เป้', percent: 25, color: '#f59e0b' }
-      ],
-      OP_COSTS: { labor: 15, accounting: 8, electricity: 1, cleaning: 1, depreciation: 2, gas: 4 }
-    };
-
-    // -----------------------------
-    // 3) Storage Keys (แก้ INVS ให้ถูก)
-    // -----------------------------
-    const KEYS = {
-      PRODS:  'bkp_prods_th',
-      COSTS:  'bkp_costs_th',
-      SHARES: 'bkp_shares_th',
-      INVS:   'bkp_invs_th',
-      EXPS:   'bkp_exps_th'
-    };
-
-    const safeLoad = (key, fallback) => {
+<script>
+(function () {
+  // -----------------------------
+  // Utilities (Back-office logic in single file)
+  // -----------------------------
+  const LS = {
+    get(key, fallback) {
       try {
         const raw = localStorage.getItem(key);
-        if (raw === null || raw === undefined || raw === '') return fallback;
-        const parsed = JSON.parse(raw);
-        return (parsed === null || parsed === undefined) ? fallback : parsed;
+        if (raw === null || raw === undefined || raw === "") return fallback;
+        return JSON.parse(raw);
       } catch (e) {
+        console.warn("LS.get parse fail:", key, e);
         return fallback;
       }
-    };
+    },
+    set(key, value) {
+      try { localStorage.setItem(key, JSON.stringify(value)); }
+      catch (e) { console.warn("LS.set fail:", key, e); }
+    }
+  };
 
-    const safeSave = (key, value) => {
-      try { localStorage.setItem(key, JSON.stringify(value)); } catch (e) {}
-    };
+  const fmtMoney = (n) => {
+    const v = Number(n || 0);
+    return v.toLocaleString(undefined, { maximumFractionDigits: 2 });
+  };
 
-    const toNumber = (v, fallback = 0) => {
-      const n = parseFloat(v);
-      return Number.isFinite(n) ? n : fallback;
-    };
+  const toDateISO = (d) => new Date(d).toISOString().split("T")[0];
 
-    const formatMoney = (n) => {
-      const x = toNumber(n, 0);
-      return x.toLocaleString(undefined, { maximumFractionDigits: 2 });
-    };
+  const sum = (arr) => arr.reduce((s, x) => s + (Number(x) || 0), 0);
+
+  const uid = () => String(Date.now()) + "_" + Math.random().toString(16).slice(2);
+
+  // -----------------------------
+  // Keys + Initial Master Data
+  // -----------------------------
+  const KEYS = {
+    PRODS: "bkp_prods_th",
+    COSTS: "bkp_costs_th",
+    SHARES: "bkp_shares_th",
+    INVS: "bkp_invs_th",
+    EXPS: "bkp_exps_th"
+  };
+
+  const INITIAL = {
+    PRODUCTS: [
+      { id: "p1", name: "น้ำยำปลาร้า", rmCost: 50.79, price: 160, color: "#f43f5e" },
+      { id: "p2", name: "ซอสผัดไทย", rmCost: 59.27, price: 150, color: "#f59e0b" },
+      { id: "p3", name: "น้ำจิ้มแจ่ว", rmCost: 79.32, price: 140, color: "#10b981" },
+      { id: "p4", name: "ซอสหมักไก่", rmCost: 105.55, price: 160, color: "#3b82f6" },
+      { id: "p5", name: "น้ำส้มตำ", rmCost: 74.72, price: 120, color: "#8b5cf6" }
+    ],
+    SHAREHOLDERS: [
+      { id: "s1", name: "บี", percent: 50, color: "#3b82f6" },
+      { id: "s2", name: "กล้วย", percent: 25, color: "#10b981" },
+      { id: "s3", name: "เป้", percent: 25, color: "#f59e0b" }
+    ],
+    OP_COSTS: { labor: 15, accounting: 8, electricity: 1, cleaning: 0, depreciation: 2, gas: 4 }
+  };
+
+  // -----------------------------
+  // Error overlay to avoid "loading stuck silently"
+  // -----------------------------
+  function showFatal(err) {
+    console.error(err);
+    const root = document.getElementById("root");
+    if (!root) return;
+    root.innerHTML = `
+      <div class="min-h-screen p-6 bg-[#0f172a] text-white">
+        <div class="max-w-3xl mx-auto">
+          <h1 class="text-2xl font-black mb-2">เกิดข้อผิดพลาด ทำให้ระบบไม่สามารถเริ่มได้</h1>
+          <p class="text-slate-300 mb-4">เปิด DevTools → Console เพื่อดูรายละเอียด (หรือส่งรูปให้ฉันดูได้)</p>
+          <div class="bg-white/5 border border-white/10 rounded-2xl p-4 mono text-sm overflow-auto">
+            ${String(err && (err.stack || err.message || err)).replace(/</g,"&lt;")}
+          </div>
+          <div class="mt-6 flex gap-2">
+            <button class="px-4 py-2 rounded-xl bg-blue-600 font-bold" onclick="location.reload()">รีเฟรช</button>
+            <button class="px-4 py-2 rounded-xl bg-slate-700 font-bold" onclick="localStorage.clear();location.reload()">ล้างข้อมูลในเครื่องแล้วเริ่มใหม่</button>
+          </div>
+        </div>
+      </div>`;
+  }
+
+  try {
+    // -----------------------------
+    // React setup (NO BABEL / NO JSX)
+    // -----------------------------
+    const { useEffect, useMemo, useRef, useState } = React;
+    const h = React.createElement;
 
     // -----------------------------
-    // 4) Error Boundary (กัน render พังแล้วค้าง)
+    // Reusable Components
     // -----------------------------
-    class ErrorBoundary extends React.Component {
-      constructor(props){
-        super(props);
-        this.state = { hasError:false, message:'' };
-      }
-      static getDerivedStateFromError(err){
-        return { hasError:true, message: (err && err.message) ? err.message : String(err) };
-      }
-      componentDidCatch(err, info){
-        console.error('BKP ErrorBoundary:', err, info);
-      }
-      render(){
-        if(this.state.hasError){
-          return (
-            <div className="min-h-screen bg-[#0f172a] text-white flex items-center justify-center p-6">
-              <div className="max-w-2xl w-full bg-white/5 border border-white/10 rounded-2xl p-6">
-                <h1 className="text-xl font-black mb-2">ระบบเจอข้อผิดพลาดในการโหลด</h1>
-                <p className="text-slate-300 text-sm mb-4">
-                  ข้อความ: <span className="font-bold text-red-300">{this.state.message}</span>
-                </p>
-                <div className="text-xs text-slate-400 space-y-2">
-                  <p>วิธีแก้เบื้องต้น:</p>
-                  <ul className="list-disc pl-5 space-y-1">
-                    <li>กดรีเฟรช (Cmd/Ctrl + Shift + R)</li>
-                    <li>เปิด F12 → Console แล้วส่ง error สีแดงมาให้ช่วยไล่ได้</li>
-                    <li>ถ้าเพิ่งแก้โค้ด ให้รอ GitHub Pages deploy แล้วค่อยรีเฟรชใหม่</li>
-                  </ul>
-                </div>
-              </div>
-            </div>
-          );
-        }
-        return this.props.children;
-      }
+    function Icon({ name, className }) {
+      return h("i", { "data-lucide": name, className: className || "w-5 h-5" });
+    }
+
+    function NavItem({ active, onClick, icon, label }) {
+      return h("button", {
+        onClick,
+        className:
+          "w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-all " +
+          (active
+            ? "sidebar-active text-white"
+            : "text-slate-400 hover:bg-white/5 hover:text-slate-200")
+      }, h(Icon, { name: icon, className: "w-5 h-5" }),
+         h("span", { className: "text-sm font-bold" }, label));
+    }
+
+    function StatCard({ label, value, color, icon, sub, bg }) {
+      return h("div", { className: `p-6 rounded-3xl border border-slate-200 glass-card shadow-sm ${bg || "bg-white"}` }, [
+        h("div", { className: "flex justify-between items-center mb-4", key: "h" }, [
+          h("p", { className: "text-[10px] font-black text-slate-400 uppercase tracking-widest", key:"l" }, label),
+          h("div", { className: "p-2 bg-slate-50 rounded-xl text-slate-300", key:"i" }, h(Icon, { name: icon, className: "w-4 h-4" }))
+        ]),
+        h("h3", { className: `text-2xl font-black ${color} tracking-tight`, key:"v" }, "฿" + fmtMoney(value)),
+        h("p", { className: "text-[9px] font-bold text-slate-300 uppercase mt-1", key:"s" }, sub || "")
+      ]);
+    }
+
+    // Chart component (Trend)
+    function SalesChart({ labels, values }) {
+      const canvasRef = useRef(null);
+      const chartRef = useRef(null);
+
+      useEffect(() => {
+        if (!window.Chart || !canvasRef.current) return;
+        if (chartRef.current) chartRef.current.destroy();
+
+        const ctx = canvasRef.current.getContext("2d");
+        chartRef.current = new Chart(ctx, {
+          type: "line",
+          data: {
+            labels,
+            datasets: [{
+              label: "ยอดขาย",
+              data: values,
+              tension: 0.35,
+              borderWidth: 3,
+              pointRadius: 3,
+              fill: true
+            }]
+          },
+          options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+              legend: { display: false },
+              tooltip: { enabled: true }
+            },
+            scales: {
+              x: { grid: { display: false }, ticks: { font: { size: 10 } } },
+              y: { grid: { display: false }, ticks: { display: false } }
+            }
+          }
+        });
+
+        return () => { if (chartRef.current) chartRef.current.destroy(); };
+      }, [labels.join("|"), values.join("|")]);
+
+      return h("div", { className: "h-[250px]" }, h("canvas", { ref: canvasRef }));
     }
 
     // -----------------------------
-    // 5) App
+    // App
     // -----------------------------
-    const App = () => {
-      const [activeTab, setActiveTab] = useState('dashboard');
+    function App() {
+      const [activeTab, setActiveTab] = useState("dashboard");
 
-      const [products, setProducts] = useState(() => safeLoad(KEYS.PRODS, INITIAL_DATA.PRODUCTS));
-      const [opCosts, setOpCosts] = useState(() => safeLoad(KEYS.COSTS, INITIAL_DATA.OP_COSTS));
-      const [shareholders, setShareholders] = useState(() => safeLoad(KEYS.SHARES, INITIAL_DATA.SHAREHOLDERS));
-      // ✅ แก้: ต้องใช้ KEYS.INVS (ไม่ใช่ KEYS.INVOICES)
-      const [invoices, setInvoices] = useState(() => safeLoad(KEYS.INVS, []));
-      const [expenses, setExpenses] = useState(() => safeLoad(KEYS.EXPS, []));
+      // Load from localStorage (or initial)
+      const [products, setProducts] = useState(() => LS.get(KEYS.PRODS, INITIAL.PRODUCTS));
+      const [opCosts, setOpCosts] = useState(() => LS.get(KEYS.COSTS, INITIAL.OP_COSTS));
+      const [shareholders, setShareholders] = useState(() => LS.get(KEYS.SHARES, INITIAL.SHAREHOLDERS));
+      const [invoices, setInvoices] = useState(() => LS.get(KEYS.INVS, []));
+      const [expenses, setExpenses] = useState(() => LS.get(KEYS.EXPS, []));
 
-      // report range
       const [reportRange, setReportRange] = useState(() => ({
-        start: new Date(new Date().getFullYear(), new Date().getMonth(), 1).toISOString().split('T')[0],
-        end: new Date().toISOString().split('T')[0]
+        start: toDateISO(new Date(new Date().getFullYear(), new Date().getMonth(), 1)),
+        end: toDateISO(new Date())
       }));
 
-      // autosave
-      useEffect(() => {
-        safeSave(KEYS.PRODS, products);
-        safeSave(KEYS.COSTS, opCosts);
-        safeSave(KEYS.SHARES, shareholders);
-        safeSave(KEYS.INVS, invoices);
-        safeSave(KEYS.EXPS, expenses);
-      }, [products, opCosts, shareholders, invoices, expenses]);
+      // Persist
+      useEffect(() => { LS.set(KEYS.PRODS, products); }, [products]);
+      useEffect(() => { LS.set(KEYS.COSTS, opCosts); }, [opCosts]);
+      useEffect(() => { LS.set(KEYS.SHARES, shareholders); }, [shareholders]);
+      useEffect(() => { LS.set(KEYS.INVS, invoices); }, [invoices]);
+      useEffect(() => { LS.set(KEYS.EXPS, expenses); }, [expenses]);
 
-      // lucide
-      useEffect(() => {
-        try { if (window.lucide) window.lucide.createIcons(); } catch(e){}
-      }, [activeTab, products, invoices]);
+      // Refresh lucide icons
+      useEffect(() => { if (window.lucide) window.lucide.createIcons(); }, [activeTab, products.length, shareholders.length]);
 
-      // Operating rate per kg
       const opRate = useMemo(() => {
-        const vals = Object.values(opCosts || {});
-        return vals.reduce((s, v) => s + toNumber(v, 0), 0);
+        const vals = Object.values(opCosts || {}).map(v => Number(v) || 0);
+        return sum(vals);
       }, [opCosts]);
 
-      // Business analysis for selected range
       const analysis = useMemo(() => {
         const start = new Date(reportRange.start);
         const end = new Date(reportRange.end);
         end.setHours(23, 59, 59, 999);
 
-        const invs = (invoices || []).filter(i => {
+        const filteredInv = (invoices || []).filter(i => {
           const d = new Date(i.date);
           return d >= start && d <= end;
         });
 
-        const exps = (expenses || []).filter(e => {
+        const filteredExp = (expenses || []).filter(e => {
           const d = new Date(e.date);
           return d >= start && d <= end;
         });
@@ -215,746 +257,598 @@
         let rev = 0, kg = 0, paid = 0;
         const prodMap = {};
 
-        invs.forEach(inv => {
-          const invTotal = toNumber(inv.total, 0);
-          rev += invTotal;
-          paid += toNumber(inv.paidAmount, 0);
+        for (const inv of filteredInv) {
+          const total = Number(inv.total || 0);
+          rev += total;
+          paid += Number(inv.paidAmount || 0);
 
           const items = inv.items || {};
-          Object.entries(items).forEach(([pid, qty]) => {
-            const q = toNumber(qty, 0);
-            if (q <= 0) return;
-
-            kg += q;
+          for (const pid of Object.keys(items)) {
+            const qty = Number(items[pid] || 0);
+            if (qty <= 0) continue;
+            kg += qty;
 
             if (!prodMap[pid]) prodMap[pid] = { qty: 0, rev: 0, profit: 0 };
-            const p = (products || []).find(x => x.id === pid);
-            if (!p) return;
 
-            const price = toNumber(p.price, 0);
-            const cost = toNumber(p.rmCost, 0) + opRate;
+            const p = products.find(x => x.id === pid);
+            if (!p) continue;
 
-            prodMap[pid].qty += q;
-            prodMap[pid].rev += q * price;
-            prodMap[pid].profit += q * (price - cost);
-          });
-        });
+            const costPerKg = (Number(p.rmCost || 0) + opRate);
+            prodMap[pid].qty += qty;
+            prodMap[pid].rev += qty * Number(p.price || 0);
+            prodMap[pid].profit += qty * (Number(p.price || 0) - costPerKg);
+          }
+        }
 
-        const expenseTotal = exps.reduce((s, e) => s + toNumber(e.amount, 0), 0);
-
-        const grossProfit = Object.values(prodMap).reduce((s, v) => s + toNumber(v.profit, 0), 0);
+        const expenseTotal = filteredExp.reduce((s, e) => s + (Number(e.amount) || 0), 0);
+        const profit = Object.values(prodMap).reduce((s, v) => s + (Number(v.profit) || 0), 0);
 
         return {
-          rev,
-          kg,
-          paid,
+          rev, kg, paid,
           receivable: rev - paid,
-          // profit here = profit from product margin only (ขาย - (RM+OpRate))
-          profit: grossProfit,
+          profit,
           prodMap,
           expenseTotal,
-          invCount: invs.length
+          invCount: filteredInv.length
         };
       }, [invoices, expenses, products, reportRange, opRate]);
 
+      const latest10 = useMemo(() => {
+        const arr = (invoices || []).slice().sort((a,b) => new Date(a.date) - new Date(b.date));
+        const last = arr.slice(-10);
+        return {
+          labels: last.map(x => x.date),
+          values: last.map(x => Number(x.total || 0))
+        };
+      }, [invoices]);
+
+      const forecast30 = useMemo(() => {
+        const days = Math.max(1, analysis.invCount);
+        const avgPerBill = analysis.rev / days;
+        return avgPerBill * 30;
+      }, [analysis.rev, analysis.invCount]);
+
       const exportCSV = () => {
-        const lines = [];
-        lines.push(`รายงาน BKP Kitchen`);
-        lines.push(`ระยะเวลา: ${reportRange.start} ถึง ${reportRange.end}`);
-        lines.push('');
-        lines.push('สินค้า,จำนวน(กก.),ยอดขาย,กำไรสุทธิ');
-
+        let csv = `รายงาน BKP Kitchen\nระยะเวลา: ${reportRange.start} ถึง ${reportRange.end}\n\n`;
+        csv += "สินค้า,จำนวน(กก.),ยอดขาย,กำไรสุทธิ\n";
         Object.entries(analysis.prodMap).forEach(([id, v]) => {
-          const name = (products.find(p => p.id === id)?.name) || id;
-          lines.push(`${name},${toNumber(v.qty,0)},${toNumber(v.rev,0)},${toNumber(v.profit,0)}`);
+          const name = (products.find(p => p.id === id) || {}).name || id;
+          csv += `${name},${Number(v.qty||0)},${Number(v.rev||0)},${Number(v.profit||0)}\n`;
         });
-
-        lines.push('');
-        lines.push(`กำไรสุทธิรวม,${toNumber(analysis.profit,0)}`);
-        lines.push('');
-        lines.push('ส่วนแบ่งกำไร');
+        csv += `\nกำไรสุทธิรวม,${analysis.profit}\n\nส่วนแบ่งกำไร\n`;
         (shareholders || []).forEach(sh => {
-          const share = toNumber(sh.percent,0) / 100;
-          const amt = toNumber(analysis.profit,0) * share;
-          lines.push(`${sh.name},${toNumber(sh.percent,0)}%,${amt.toFixed(2)}`);
+          const share = analysis.profit * (Number(sh.percent||0)/100);
+          csv += `${sh.name},${sh.percent}%,${share.toFixed(2)}\n`;
         });
 
-        const csv = "\uFEFF" + lines.join("\n");
-        const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
-        const link = document.createElement('a');
+        const blob = new Blob(["\uFEFF" + csv], { type: "text/csv;charset=utf-8;" });
+        const link = document.createElement("a");
         link.href = URL.createObjectURL(blob);
         link.download = `BKP_Report_${reportRange.start}_to_${reportRange.end}.csv`;
-        document.body.appendChild(link);
         link.click();
-        document.body.removeChild(link);
       };
 
       // -----------------------------
-      // UI
+      // Pages (Tabs)
       // -----------------------------
-      return (
-        <div className="flex flex-col md:flex-row min-h-screen">
-          {/* Sidebar */}
-          <nav className="w-full md:w-72 bg-[#0f172a] p-6 flex flex-col no-print shrink-0 border-r border-white/5 shadow-2xl">
-            <div className="flex items-center gap-4 mb-10 px-2">
-              <div className="bg-blue-600 p-3 rounded-2xl text-white shadow-xl shadow-blue-500/20">
-                <i data-lucide="cooking-pot" className="w-6 h-6"></i>
-              </div>
-              <div>
-                <h1 className="text-white font-bold text-xl tracking-tight">BKP SYSTEM</h1>
-                <span className="text-blue-400 text-[10px] font-bold">ครัวกลางมืออาชีพ</span>
-              </div>
-            </div>
+      function Dashboard() {
+        return h("div", { className:"space-y-8 animate-in" }, [
+          h("header", { className:"flex justify-between items-end border-l-4 border-blue-600 pl-4", key:"hd" }, [
+            h("div", { key:"l" }, [
+              h("h2", { className:"text-2xl font-black text-slate-800" }, "ภาพรวมธุรกิจ"),
+              h("p", { className:"text-slate-400 text-sm" }, "สถานะการเงินและการขายล่าสุด")
+            ]),
+            h("div", { className:"no-print bg-white p-2 px-4 rounded-xl border shadow-sm text-xs font-bold text-slate-500 flex items-center gap-2", key:"r" }, [
+              h(Icon, { name:"calendar", className:"w-3 h-3 text-blue-500" }),
+              new Date().toLocaleDateString("th-TH")
+            ])
+          ]),
 
-            <div className="flex-1 space-y-1 overflow-y-auto no-scrollbar">
-              <NavItem active={activeTab==='dashboard'} onClick={()=>setActiveTab('dashboard')} icon="layout-dashboard" label="หน้าหลัก (Dashboard)"/>
-              <NavItem active={activeTab==='report'} onClick={()=>setActiveTab('report')} icon="file-text" label="รายงานผู้ถือหุ้น"/>
-              <NavItem active={activeTab==='settlement'} onClick={()=>setActiveTab('settlement')} icon="calculator" label="ยอดโอนค่าแรงผลิต"/>
-              <NavItem active={activeTab==='watchdog'} onClick={()=>setActiveTab('watchdog')} icon="shield-alert" label="เฝ้าระวังกำไร"/>
+          h("div", { className:"grid grid-cols-1 md:grid-cols-4 gap-4", key:"cards" }, [
+            h(StatCard, { label:"เงินสดรับจริง", value:analysis.paid, color:"text-green-600", icon:"banknote", sub:"เข้ากระเป๋าแล้ว", key:"c1" }),
+            h(StatCard, { label:"ยอดขายรวม", value:analysis.rev, color:"text-slate-900", icon:"trending-up", sub:"รวมบิลทั้งหมด", key:"c2" }),
+            h(StatCard, { label:"ลูกหนี้ค้างชำระ", value:analysis.receivable, color:"text-red-500", icon:"alert-circle", sub:"รอเก็บเงิน", key:"c3" }),
+            h(StatCard, { label:"กำไรสุทธิ", value:analysis.profit, color:"text-blue-600", icon:"dollar-sign", sub:"หักต้นทุนผลิตต่อกก.", bg:"bg-blue-50/50", key:"c4" })
+          ]),
 
-              <div className="pt-6 pb-2 px-4 text-[10px] text-slate-500 font-bold uppercase tracking-widest">การทำงาน</div>
-              <NavItem active={activeTab==='record'} onClick={()=>setActiveTab('record')} icon="shopping-cart" label="ออกบิลใหม่"/>
-              <NavItem active={activeTab==='history'} onClick={()=>setActiveTab('history')} icon="history" label="ประวัติลูกหนี้"/>
-              <NavItem active={activeTab==='expense'} onClick={()=>setActiveTab('expense')} icon="wallet" label="บันทึกรายจ่าย"/>
+          h("div", { className:"grid grid-cols-1 lg:grid-cols-3 gap-6", key:"charts" }, [
+            h("div", { className:"lg:col-span-2 glass-card p-6 rounded-3xl shadow-sm h-[350px]", key:"ch1" }, [
+              h("h3", { className:"font-bold text-slate-800 mb-4 flex items-center gap-2" }, [
+                h(Icon, { name:"bar-chart-2", className:"w-4 h-4" }),
+                "แนวโน้มยอดขาย (10 รายการล่าสุด)"
+              ]),
+              h(SalesChart, { labels: latest10.labels, values: latest10.values })
+            ]),
 
-              <div className="pt-6 pb-2 px-4 text-[10px] text-slate-500 font-bold uppercase tracking-widest">ตั้งค่า</div>
-              <NavItem active={activeTab==='settings'} onClick={()=>setActiveTab('settings')} icon="settings" label="จัดการหุ้น & สินค้า"/>
-            </div>
+            h("div", { className:"bg-[#0f172a] p-8 rounded-3xl text-white relative overflow-hidden flex flex-col justify-center shadow-lg", key:"ch2" }, [
+              h("p", { className:"text-blue-400 font-bold text-xs uppercase mb-2" }, "พยากรณ์รายรับ (30 วัน)"),
+              h("h4", { className:"text-4xl font-black mb-4" }, "฿" + Number(forecast30||0).toLocaleString(undefined,{maximumFractionDigits:0})),
+              h("p", { className:"text-slate-400 text-xs" }, "คำนวณจากยอดขายในช่วงรายงานปัจจุบัน")
+            ])
+          ])
+        ]);
+      }
 
-            <div className="mt-6 text-[10px] text-slate-500">
-              <div className="flex items-center justify-between">
-                <span>OpRate/kg</span>
-                <span className="font-bold text-slate-300">฿{formatMoney(opRate)}</span>
-              </div>
-              <div className="flex items-center justify-between">
-                <span>บิลในช่วง</span>
-                <span className="font-bold text-slate-300">{analysis.invCount}</span>
-              </div>
-            </div>
-          </nav>
+      function Report() {
+        const rows = Object.entries(analysis.prodMap);
 
-          {/* Main */}
-          <main className="flex-1 p-4 md:p-8 overflow-y-auto">
+        return h("div", { className:"space-y-6 animate-in" }, [
+          h("div", { className:"glass-card p-6 rounded-3xl no-print flex gap-4 shadow-sm items-end", key:"filters" }, [
+            h("div", { className:"grid grid-cols-2 gap-4 flex-1" }, [
+              h("div", {}, [
+                h("label", { className:"text-xs font-bold text-slate-500" }, "เริ่มวันที่"),
+                h("input", {
+                  type:"date",
+                  value: reportRange.start,
+                  onChange: (e) => setReportRange({ ...reportRange, start: e.target.value }),
+                  className:"input-premium"
+                })
+              ]),
+              h("div", {}, [
+                h("label", { className:"text-xs font-bold text-slate-500" }, "ถึงวันที่"),
+                h("input", {
+                  type:"date",
+                  value: reportRange.end,
+                  onChange: (e) => setReportRange({ ...reportRange, end: e.target.value }),
+                  className:"input-premium"
+                })
+              ])
+            ]),
+            h("div", { className:"flex gap-2" }, [
+              h("button", { onClick: exportCSV, className:"bg-green-600 text-white px-4 py-3 rounded-xl font-bold flex items-center gap-2 hover:bg-green-700 text-sm" },
+                [h(Icon,{name:"download",className:"w-4 h-4"}), "CSV"]
+              ),
+              h("button", { onClick: () => window.print(), className:"bg-slate-900 text-white px-4 py-3 rounded-xl font-bold flex items-center gap-2 hover:scale-105 text-sm" },
+                [h(Icon,{name:"printer",className:"w-4 h-4"}), "พิมพ์"]
+              )
+            ])
+          ]),
 
-            {/* Dashboard */}
-            {activeTab==='dashboard' && (
-              <div className="space-y-8 animate-in">
-                <header className="flex justify-between items-end border-l-4 border-blue-600 pl-4">
-                  <div>
-                    <h2 className="text-2xl font-black text-slate-800">ภาพรวมธุรกิจ</h2>
-                    <p className="text-slate-400 text-sm">สถานะการเงินและการขายล่าสุด</p>
-                  </div>
-                  <div className="no-print bg-white p-2 px-4 rounded-xl border shadow-sm text-xs font-bold text-slate-500 flex items-center gap-2">
-                    <i data-lucide="calendar" className="w-3 h-3 text-blue-500"></i>
-                    {new Date().toLocaleDateString('th-TH')}
-                  </div>
-                </header>
+          h("div", { className:"bg-white p-10 rounded-3xl shadow-lg min-h-[800px] print:shadow-none print:border-none", key:"paper" }, [
+            h("div", { className:"flex justify-between items-start mb-10 border-b-4 border-blue-600 pb-8" }, [
+              h("div", {}, [
+                h("h1", { className:"text-3xl font-black text-slate-900" }, "รายงานผลประกอบการ"),
+                h("p", { className:"text-blue-600 font-bold" }, "ครัวกลาง BKP Partnership"),
+                h("p", { className:"text-xs text-slate-500 mt-1" }, `ช่วงวันที่: ${reportRange.start} ถึง ${reportRange.end}`)
+              ]),
+              h("div", { className:"text-right" }, [
+                h("p", { className:"text-xs font-bold text-slate-400" }, "กำไรสุทธิปันผล"),
+                h("h2", { className:"text-4xl font-black text-slate-900" }, "฿" + fmtMoney(analysis.profit))
+              ])
+            ]),
 
-                <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-                  <StatCard label="เงินสดรับจริง" value={analysis.paid} color="text-green-600" icon="banknote" sub="เข้ากระเป๋าแล้ว"/>
-                  <StatCard label="ยอดขายรวม" value={analysis.rev} color="text-slate-900" icon="trending-up" sub="รวมบิลทั้งหมด"/>
-                  <StatCard label="ลูกหนี้ค้างชำระ" value={analysis.receivable} color="text-red-500" icon="alert-circle" sub="รอเก็บเงิน"/>
-                  <StatCard label="กำไรสุทธิ" value={analysis.profit} color="text-blue-600" icon="dollar-sign" bg="bg-blue-50/50" sub="ขาย - (RM+ค่าแรงต่อกก.)"/>
-                </div>
+            h("table", { className:"w-full text-left text-sm mb-12" }, [
+              h("thead", {}, h("tr", { className:"bg-slate-50 border-y-2 border-slate-200 text-slate-500" }, [
+                h("th", { className:"p-4" }, "รายการสินค้า"),
+                h("th", { className:"p-4 text-center" }, "จำนวน (กก.)"),
+                h("th", { className:"p-4 text-right" }, "ยอดขาย"),
+                h("th", { className:"p-4 text-right text-blue-600" }, "กำไร")
+              ])),
+              h("tbody", {}, rows.map(([pid, val]) => {
+                const p = products.find(x => x.id === pid);
+                return h("tr", { key: pid, className:"border-b" }, [
+                  h("td", { className:"p-4 font-bold" }, p ? p.name : pid),
+                  h("td", { className:"p-4 text-center" }, Number(val.qty||0).toLocaleString()),
+                  h("td", { className:"p-4 text-right" }, "฿" + fmtMoney(val.rev)),
+                  h("td", { className:"p-4 text-right font-bold text-green-600" }, "฿" + fmtMoney(val.profit))
+                ]);
+              }))
+            ]),
 
-                <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-                  <div className="lg:col-span-2 glass-card p-6 rounded-3xl shadow-sm h-[350px]">
-                    <h3 className="font-bold text-slate-800 mb-4 flex items-center gap-2">
-                      <i data-lucide="bar-chart-2" className="w-4 h-4"></i> แนวโน้มยอดขาย (10 รายการล่าสุด)
-                    </h3>
-                    <div className="h-[250px]">
-                      {hasCharts ? (
-                        <ResponsiveContainer width="100%" height="100%">
-                          <AreaChart data={(invoices||[]).slice(-10)}>
-                            <defs>
-                              <linearGradient id="cSales" x1="0" y1="0" x2="0" y2="1">
-                                <stop offset="5%" stopColor="#3b82f6" stopOpacity={0.2}/>
-                                <stop offset="95%" stopColor="#3b82f6" stopOpacity={0}/>
-                              </linearGradient>
-                            </defs>
-                            <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9"/>
-                            <XAxis dataKey="date" tick={{ fontSize: 10 }}/>
-                            <YAxis hide />
-                            <Tooltip />
-                            <Area type="monotone" dataKey="total" stroke="#2563eb" strokeWidth={3} fill="url(#cSales)"/>
-                          </AreaChart>
-                        </ResponsiveContainer>
-                      ) : (
-                        <div className="h-full flex items-center justify-center text-slate-400">
-                          ไม่สามารถโหลดกราฟได้ (ตรวจสอบการโหลด Recharts)
-                        </div>
-                      )}
-                    </div>
-                  </div>
+            h("h3", { className:"font-bold text-slate-800 mb-6 border-l-4 border-blue-600 pl-3" }, "ส่วนแบ่งกำไรผู้ถือหุ้น"),
+            h("div", { className:"grid grid-cols-1 md:grid-cols-3 gap-4 mb-20 text-center" },
+              (shareholders || []).map((sh) => {
+                const amt = analysis.profit * (Number(sh.percent||0)/100);
+                return h("div", { key: sh.id, className:"p-6 border rounded-2xl bg-slate-50" }, [
+                  h("p", { className:"text-sm font-bold text-slate-500 mb-2" }, `${sh.name} (${sh.percent}%)`),
+                  h("p", { className:"text-2xl font-black", style:{ color: sh.color } }, "฿" + amt.toLocaleString(undefined,{minimumFractionDigits:2, maximumFractionDigits:2}))
+                ]);
+              })
+            )
+          ])
+        ]);
+      }
 
-                  <div className="bg-[#0f172a] p-8 rounded-3xl text-white relative overflow-hidden flex flex-col justify-center shadow-lg">
-                    <p className="text-blue-400 font-bold text-xs uppercase mb-2">พยากรณ์รายรับ (30 วัน)</p>
-                    <h4 className="text-4xl font-black mb-4">
-                      ฿{formatMoney((analysis.rev / Math.max(analysis.invCount, 1)) * 30).split('.')[0]}
-                    </h4>
-                    <p className="text-slate-400 text-xs">คำนวณจากยอดขายเฉลี่ยต่อบิลในช่วงรายงาน</p>
-                  </div>
-                </div>
-              </div>
-            )}
+      function Settlement() {
+        return h("div", { className:"max-w-4xl mx-auto space-y-6 animate-in" }, [
+          h("h2", { className:"text-2xl font-black text-slate-800" }, "สรุปยอดโอนค่าแรง (Settlement)"),
+          h("div", { className:"glass-card p-8 rounded-3xl shadow-lg" }, [
+            h("div", { className:"grid grid-cols-1 lg:grid-cols-2 gap-8" }, [
+              h("div", { className:"bg-blue-600 p-8 rounded-3xl text-white shadow-lg text-center flex flex-col justify-center" }, [
+                h("p", { className:"text-blue-100 text-sm font-bold mb-2" }, "น้ำหนักผลิตรวม (Kg)"),
+                h("h2", { className:"text-6xl font-black mb-6" }, Number(analysis.kg||0).toLocaleString()),
+                h("div", { className:"pt-6 border-t border-white/20" }, [
+                  h("p", { className:"text-sm mb-1" }, "ยอดโอนจ่ายรวม"),
+                  h("h4", { className:"text-3xl font-black" }, "฿" + fmtMoney((Number(analysis.kg||0) * opRate)))
+                ])
+              ]),
+              h("div", { className:"space-y-3" },
+                Object.entries(opCosts || {}).map(([k,v]) => h("div", { key:k, className:"flex justify-between p-4 bg-white border rounded-2xl shadow-sm" }, [
+                  h("div", {}, [
+                    h("p", { className:"font-bold text-sm uppercase" }, k),
+                    h("p", { className:"text-xs text-slate-400" }, `${Number(analysis.kg||0).toLocaleString()} Kg x ${Number(v||0)}`)
+                  ]),
+                  h("p", { className:"font-black text-lg" }, "฿" + fmtMoney(Number(analysis.kg||0) * Number(v||0)))
+                ]))
+              )
+            ])
+          ])
+        ]);
+      }
 
-            {/* Report */}
-            {activeTab==='report' && (
-              <div className="space-y-6 animate-in">
-                <div className="glass-card p-6 rounded-3xl no-print flex gap-4 shadow-sm items-end">
-                  <div className="grid grid-cols-2 gap-4 flex-1">
-                    <div>
-                      <label className="text-xs font-bold text-slate-500">เริ่มวันที่</label>
-                      <input type="date" value={reportRange.start} onChange={e=>setReportRange({...reportRange, start:e.target.value})} className="input-premium"/>
-                    </div>
-                    <div>
-                      <label className="text-xs font-bold text-slate-500">ถึงวันที่</label>
-                      <input type="date" value={reportRange.end} onChange={e=>setReportRange({...reportRange, end:e.target.value})} className="input-premium"/>
-                    </div>
-                  </div>
-                  <div className="flex gap-2">
-                    <button onClick={exportCSV} className="bg-green-600 text-white px-4 py-3 rounded-xl font-bold flex items-center gap-2 hover:bg-green-700 text-sm">
-                      <i data-lucide="download" className="w-4 h-4"></i> CSV
-                    </button>
-                    <button onClick={() => window.print()} className="bg-slate-900 text-white px-4 py-3 rounded-xl font-bold flex items-center gap-2 hover:scale-105 text-sm">
-                      <i data-lucide="printer" className="w-4 h-4"></i> พิมพ์
-                    </button>
-                  </div>
-                </div>
+      function Watchdog() {
+        return h("div", { className:"space-y-6 animate-in" }, [
+          h("h2", { className:"text-2xl font-black text-slate-800 border-l-4 border-red-500 pl-3" }, "Margin Watchdog"),
+          h("div", { className:"grid grid-cols-1 md:grid-cols-3 gap-6" },
+            (products || []).map(p => {
+              const price = Number(p.price||0);
+              const cost = Number(p.rmCost||0) + opRate;
+              const margin = price > 0 ? ((price - cost)/price)*100 : 0;
+              const isLow = margin < 15;
+              return h("div", {
+                key:p.id,
+                className: `p-6 rounded-3xl border-2 transition-all ${isLow ? "bg-red-50 border-red-500" : "bg-white border-slate-100"}`
+              }, [
+                h("div", { className:"flex justify-between items-start mb-4" }, [
+                  h("h4", { className:"font-bold text-lg" }, p.name),
+                  isLow ? h(Icon, { name:"alert-triangle", className:"text-red-600 w-6 h-6" }) : null
+                ]),
+                h("p", { className:`text-4xl font-black ${isLow ? "text-red-600":"text-slate-900"}` }, margin.toFixed(1) + "%"),
+                h("p", { className:"text-xs font-bold text-slate-400 mt-2" }, `กำไรต่อกก. ≈ ฿${fmtMoney(price - cost)} (รวมทุนแฝง/กก. = ฿${fmtMoney(opRate)})`)
+              ]);
+            })
+          )
+        ]);
+      }
 
-                <div className="bg-white p-10 rounded-3xl shadow-lg min-h-[800px] print:shadow-none print:border-none">
-                  <div className="flex justify-between items-start mb-10 border-b-4 border-blue-600 pb-8">
-                    <div>
-                      <h1 className="text-3xl font-black text-slate-900">รายงานผลประกอบการ</h1>
-                      <p className="text-blue-600 font-bold">ครัวกลาง BKP Partnership</p>
-                      <p className="text-xs text-slate-500 mt-1">ช่วงวันที่: {reportRange.start} ถึง {reportRange.end}</p>
-                    </div>
-                    <div className="text-right">
-                      <p className="text-xs font-bold text-slate-400">กำไรสุทธิ (จาก Margin)</p>
-                      <h2 className="text-4xl font-black text-slate-900">฿{formatMoney(analysis.profit).split('.')[0]}</h2>
-                      <p className="text-[11px] text-slate-400 mt-1">* กำไร = ขาย - (RM + OpRate)</p>
-                    </div>
-                  </div>
+      function RecordSale() {
+        const [date, setDate] = useState(toDateISO(new Date()));
+        const [cust, setCust] = useState("");
+        const [items, setItems] = useState(() => {
+          const obj = {};
+          (products || []).forEach(p => obj[p.id] = 0);
+          return obj;
+        });
 
-                  <table className="w-full text-left text-sm mb-12">
-                    <thead>
-                      <tr className="bg-slate-50 border-y-2 border-slate-200 text-slate-500">
-                        <th className="p-4">รายการสินค้า</th>
-                        <th className="p-4 text-center">จำนวน (กก.)</th>
-                        <th className="p-4 text-right">ยอดขาย</th>
-                        <th className="p-4 text-right text-blue-600">กำไร</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {Object.entries(analysis.prodMap).length === 0 ? (
-                        <tr><td className="p-4 text-slate-400" colSpan="4">ยังไม่มีข้อมูลในช่วงที่เลือก</td></tr>
-                      ) : (
-                        Object.entries(analysis.prodMap).map(([pid, val]) => (
-                          <tr key={pid} className="border-b">
-                            <td className="p-4 font-bold">{products.find(x=>x.id===pid)?.name || pid}</td>
-                            <td className="p-4 text-center">{toNumber(val.qty,0).toLocaleString()}</td>
-                            <td className="p-4 text-right">฿{formatMoney(val.rev)}</td>
-                            <td className="p-4 text-right font-bold text-green-600">฿{formatMoney(val.profit)}</td>
-                          </tr>
-                        ))
-                      )}
-                    </tbody>
-                  </table>
+        useEffect(() => {
+          // if products changed, re-sync item keys without losing existing values
+          setItems(prev => {
+            const next = { ...prev };
+            (products || []).forEach(p => { if (next[p.id] === undefined) next[p.id] = 0; });
+            Object.keys(next).forEach(k => { if (!(products || []).some(p => p.id === k)) delete next[k]; });
+            return next;
+          });
+        }, [products]);
 
-                  <h3 className="font-bold text-slate-800 mb-6 border-l-4 border-blue-600 pl-3">ส่วนแบ่งกำไรผู้ถือหุ้น</h3>
-                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-20 text-center">
-                    {shareholders.map((sh,i) => (
-                      <div key={sh.id || i} className="p-6 border rounded-2xl bg-slate-50">
-                        <p className="text-sm font-bold text-slate-500 mb-2">{sh.name} ({toNumber(sh.percent,0)}%)</p>
-                        <p className="text-2xl font-black" style={{color: sh.color || '#0f172a'}}>
-                          ฿{formatMoney(toNumber(analysis.profit,0) * (toNumber(sh.percent,0)/100))}
-                        </p>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              </div>
-            )}
+        const total = useMemo(() => {
+          let t = 0;
+          for (const p of (products || [])) {
+            const q = Number(items[p.id] || 0);
+            t += q * Number(p.price || 0);
+          }
+          return t;
+        }, [items, products]);
 
-            {/* Settlement */}
-            {activeTab==='settlement' && (
-              <div className="max-w-4xl mx-auto space-y-6 animate-in">
-                <h2 className="text-2xl font-black text-slate-800">สรุปยอดโอนค่าแรง (Settlement)</h2>
-                <div className="glass-card p-8 rounded-3xl shadow-lg">
-                  <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-                    <div className="bg-blue-600 p-8 rounded-3xl text-white shadow-lg text-center flex flex-col justify-center">
-                      <p className="text-blue-100 text-sm font-bold mb-2">น้ำหนักผลิตรวม (Kg)</p>
-                      <h2 className="text-6xl font-black mb-6">{toNumber(analysis.kg,0).toLocaleString()}</h2>
-                      <div className="pt-6 border-t border-white/20">
-                        <p className="text-sm mb-1">ยอดโอนจ่ายรวม</p>
-                        <h4 className="text-3xl font-black">฿{formatMoney(toNumber(analysis.kg,0) * toNumber(opRate,0)).split('.')[0]}</h4>
-                      </div>
-                    </div>
-                    <div className="space-y-3">
-                      {Object.entries(opCosts || {}).map(([k,v]) => (
-                        <div key={k} className="flex justify-between p-4 bg-white border rounded-2xl shadow-sm">
-                          <div>
-                            <p className="font-bold text-sm uppercase">{k}</p>
-                            <p className="text-xs text-slate-400">{toNumber(analysis.kg,0)} Kg x {toNumber(v,0)}</p>
-                          </div>
-                          <p className="font-black text-lg">฿{formatMoney(toNumber(analysis.kg,0) * toNumber(v,0)).split('.')[0]}</p>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                </div>
-              </div>
-            )}
+        const save = () => {
+          if (!cust.trim()) return alert("กรุณากรอกชื่อลูกค้า");
+          if (total <= 0) return alert("กรุณาใส่จำนวนสินค้าอย่างน้อย 1 รายการ");
 
-            {/* Record Invoice */}
-            {activeTab==='record' && (
-              <RecordInvoice
-                products={products}
-                onSave={(inv) => {
-                  setInvoices([{ ...inv }, ...(invoices || [])]);
-                  setActiveTab('dashboard');
-                }}
-              />
-            )}
+          // compact items
+          const compact = {};
+          for (const k of Object.keys(items)) {
+            const q = Number(items[k] || 0);
+            if (q > 0) compact[k] = q;
+          }
 
-            {/* History */}
-            {activeTab==='history' && (
-              <div className="space-y-6 animate-in">
-                <h2 className="text-2xl font-black text-slate-800">ประวัติและลูกหนี้ (History)</h2>
+          const inv = {
+            id: uid(),
+            date,
+            customerName: cust.trim(),
+            items: compact,
+            total,
+            status: "Unpaid",
+            paidAmount: 0
+          };
 
-                {(invoices || []).length === 0 ? (
-                  <div className="bg-white p-8 rounded-3xl border text-slate-400">ยังไม่มีบิล</div>
-                ) : (
-                  <div className="space-y-3">
-                    {invoices.map(inv => {
-                      const status = inv.status || 'Unpaid';
-                      const isPaid = status === 'Paid';
-                      const isPartial = status === 'Partial';
+          setInvoices([inv, ...(invoices || [])]);
+          setActiveTab("dashboard");
+        };
 
-                      return (
-                        <div key={inv.id} className="bg-white p-5 rounded-3xl border flex items-center justify-between shadow-sm">
-                          <div className="flex gap-4 items-center">
-                            <div className="bg-slate-100 p-3 rounded-2xl text-center min-w-[70px] font-black text-slate-600">
-                              <p className="text-[10px] uppercase">{new Date(inv.date).toLocaleDateString('th-TH', { month:'short' })}</p>
-                              <p className="text-2xl leading-none">{new Date(inv.date).getDate()}</p>
-                            </div>
-                            <div>
-                              <h4 className="font-bold text-lg text-slate-800">{inv.customerName || '-'}</h4>
-                              <span className={`text-[10px] px-2 py-1 rounded-md font-bold ${
-                                isPaid ? 'bg-green-100 text-green-700' :
-                                isPartial ? 'bg-amber-100 text-amber-700' :
-                                'bg-red-100 text-red-700'
-                              }`}>
-                                {isPaid ? 'จ่ายแล้ว' : isPartial ? 'จ่ายบางส่วน' : 'ค้างชำระ'}
-                              </span>
-                              <p className="text-[11px] text-slate-400 mt-1">
-                                รับแล้ว: ฿{formatMoney(inv.paidAmount || 0)} / ยอดบิล: ฿{formatMoney(inv.total || 0)}
-                              </p>
-                            </div>
-                          </div>
+        return h("div", { className:"max-w-xl mx-auto space-y-6 animate-in" }, [
+          h("h2", { className:"text-2xl font-black text-slate-800 border-l-4 border-blue-600 pl-4" }, "ออกใบแจ้งหนี้ (Sale)"),
+          h("div", { className:"glass-card p-8 rounded-3xl shadow-xl space-y-6" }, [
+            h("div", { className:"grid grid-cols-2 gap-4" }, [
+              h("div", {}, [
+                h("label", { className:"text-xs font-bold text-slate-400 ml-2" }, "วันที่"),
+                h("input", { type:"date", value: date, onChange: e=>setDate(e.target.value), className:"input-premium" })
+              ]),
+              h("div", {}, [
+                h("label", { className:"text-xs font-bold text-slate-400 ml-2" }, "ลูกค้า"),
+                h("input", { value: cust, onChange: e=>setCust(e.target.value), className:"input-premium", placeholder:"ชื่อลูกค้า..." })
+              ])
+            ]),
 
-                          <div className="text-right flex items-center gap-4">
-                            <div>
-                              <p className="text-xs text-slate-400 font-bold">ยอดบิล</p>
-                              <p className="font-black text-xl">฿{formatMoney(inv.total || 0).split('.')[0]}</p>
-                            </div>
+            h("div", { className:"space-y-3 max-h-[300px] overflow-y-auto no-scrollbar" },
+              (products || []).map(p => h("div", {
+                key:p.id,
+                className:"flex items-center gap-4 p-4 bg-white rounded-2xl border hover:border-blue-500 transition-all"
+              }, [
+                h("div", { className:"flex-1 font-bold" }, [
+                  p.name,
+                  h("span", { className:"text-xs text-slate-400 ml-2" }, `@${p.price}`)
+                ]),
+                h("div", { className:"w-28 relative" }, [
+                  h("input", {
+                    type:"number",
+                    min:"0",
+                    step:"0.01",
+                    value: items[p.id] || 0,
+                    onChange: e => setItems({ ...items, [p.id]: e.target.value }),
+                    className:"w-full p-2 bg-slate-50 rounded-xl text-right font-bold outline-none"
+                  }),
+                  h("span", { className:"absolute right-2 top-1.5 text-xs text-slate-400" }, "Kg")
+                ])
+              ]))
+            ),
 
-                            {!isPaid && (
-                              <button
-                                onClick={() => {
-                                  const amt = prompt("ยอดรับชำระ:");
-                                  const add = toNumber(amt, NaN);
-                                  if (!Number.isFinite(add) || add <= 0) return;
-                                  setInvoices((invoices || []).map(i => {
-                                    if (i.id !== inv.id) return i;
-                                    const newPaid = toNumber(i.paidAmount, 0) + add;
-                                    const newStatus = newPaid >= toNumber(i.total,0) ? 'Paid' : 'Partial';
-                                    return { ...i, paidAmount: newPaid, status: newStatus };
-                                  }));
-                                }}
-                                className="bg-emerald-500 text-white px-4 py-2 rounded-xl font-bold shadow-md text-xs">
-                                รับเงิน
-                              </button>
-                            )}
-                          </div>
-                        </div>
-                      );
-                    })}
-                  </div>
-                )}
-              </div>
-            )}
+            h("div", { className:"flex items-center justify-between bg-slate-50 border rounded-2xl p-4" }, [
+              h("div", { className:"text-xs font-bold text-slate-500" }, "รวมยอดบิล"),
+              h("div", { className:"text-xl font-black text-slate-900" }, "฿" + fmtMoney(total))
+            ]),
 
-            {/* Expense */}
-            {activeTab==='expense' && (
-              <ExpenseForm
-                onSave={(exp) => {
-                  setExpenses([...(expenses || []), exp]);
-                  setActiveTab('dashboard');
-                }}
-              />
-            )}
+            h("button", {
+              onClick: save,
+              className:"w-full bg-blue-600 text-white font-black py-4 rounded-2xl shadow-lg hover:scale-105 transition-all text-lg"
+            }, "บันทึกบิล")
+          ])
+        ]);
+      }
 
-            {/* Settings */}
-            {activeTab==='settings' && (
-              <Settings
-                products={products}
-                setProducts={setProducts}
-                opCosts={opCosts}
-                setOpCosts={setOpCosts}
-                shareholders={shareholders}
-                setShareholders={setShareholders}
-              />
-            )}
+      function History() {
+        const receiveMoney = (invId) => {
+          const inv = (invoices || []).find(x => x.id === invId);
+          if (!inv) return;
 
-            {/* Watchdog */}
-            {activeTab==='watchdog' && (
-              <div className="space-y-6 animate-in">
-                <h2 className="text-2xl font-black text-slate-800 border-l-4 border-red-500 pl-3">Margin Watchdog</h2>
-                <p className="text-sm text-slate-500">
-                  เกณฑ์เตือน: Margin &lt; 15% (คำนวณจาก ราคาขาย - (RM + OpRate))
-                </p>
+          const amtStr = prompt("ยอดรับชำระ:");
+          if (!amtStr) return;
+          const amt = Number(amtStr);
+          if (Number.isNaN(amt) || amt <= 0) return alert("ยอดไม่ถูกต้อง");
 
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                  {products.map(p => {
-                    const price = toNumber(p.price, 0);
-                    const cost = toNumber(p.rmCost, 0) + toNumber(opRate, 0);
-                    const profitPerKg = price - cost;
-                    const margin = price > 0 ? (profitPerKg / price) * 100 : 0;
-                    const isLow = margin < 15;
+          setInvoices((invoices || []).map(i => {
+            if (i.id !== invId) return i;
+            const newPaid = Number(i.paidAmount || 0) + amt;
+            const status =
+              newPaid >= Number(i.total || 0) ? "Paid" :
+              newPaid > 0 ? "Partial" : "Unpaid";
+            return { ...i, paidAmount: newPaid, status };
+          }));
+        };
 
-                    return (
-                      <div key={p.id} className={`p-6 rounded-3xl border-2 transition-all ${isLow ? 'bg-red-50 border-red-500' : 'bg-white border-slate-100'}`}>
-                        <div className="flex justify-between items-start mb-4">
-                          <h4 className="font-bold text-lg">{p.name}</h4>
-                          {isLow && <i data-lucide="alert-triangle" className="text-red-600 w-6 h-6 animate-bounce"></i>}
-                        </div>
+        return h("div", { className:"space-y-6 animate-in" }, [
+          h("h2", { className:"text-2xl font-black text-slate-800" }, "ประวัติและลูกหนี้ (History)"),
+          h("div", { className:"space-y-3" },
+            (invoices || []).map(inv => {
+              const status = inv.status || "Unpaid";
+              const isPaid = status === "Paid";
+              const badge =
+                isPaid ? "bg-green-100 text-green-700" :
+                status === "Partial" ? "bg-amber-100 text-amber-700" :
+                "bg-red-100 text-red-700";
 
-                        <p className={`text-4xl font-black ${isLow ? 'text-red-600' : 'text-slate-900'}`}>{margin.toFixed(1)}%</p>
-                        <div className="mt-3 text-sm">
-                          <div className="flex justify-between text-slate-500">
-                            <span>กำไร/กก.</span>
-                            <span className="font-black text-slate-800">฿{formatMoney(profitPerKg)}</span>
-                          </div>
-                          <div className="flex justify-between text-slate-500">
-                            <span>ราคาขาย</span>
-                            <span className="font-bold">฿{formatMoney(price)}</span>
-                          </div>
-                          <div className="flex justify-between text-slate-500">
-                            <span>ต้นทุนรวม</span>
-                            <span className="font-bold">฿{formatMoney(cost)}</span>
-                          </div>
-                        </div>
-                      </div>
-                    );
-                  })}
-                </div>
-              </div>
-            )}
+              return h("div", { key: inv.id, className:"bg-white p-5 rounded-3xl border flex items-center justify-between shadow-sm" }, [
+                h("div", { className:"flex gap-4 items-center" }, [
+                  h("div", { className:"bg-slate-100 p-3 rounded-2xl text-center min-w-[70px] font-black text-slate-600" }, [
+                    h("p", { className:"text-[10px] uppercase" }, new Date(inv.date).toLocaleDateString("th-TH",{month:"short"})),
+                    h("p", { className:"text-2xl leading-none" }, new Date(inv.date).getDate())
+                  ]),
+                  h("div", {}, [
+                    h("h4", { className:"font-bold text-lg text-slate-800" }, inv.customerName || "-"),
+                    h("span", { className:`text-[10px] px-2 py-1 rounded-md font-bold ${badge}` },
+                      isPaid ? "จ่ายแล้ว" : status === "Partial" ? "จ่ายบางส่วน" : "ค้างชำระ"
+                    ),
+                    h("p", { className:"text-xs text-slate-400 mt-1" },
+                      `รับแล้ว ฿${fmtMoney(inv.paidAmount)} / ทั้งหมด ฿${fmtMoney(inv.total)}`
+                    )
+                  ])
+                ]),
+                h("div", { className:"text-right flex items-center gap-4" }, [
+                  h("div", {}, [
+                    h("p", { className:"text-xs text-slate-400 font-bold" }, "ยอดบิล"),
+                    h("p", { className:"font-black text-xl" }, "฿" + fmtMoney(inv.total))
+                  ]),
+                  !isPaid ? h("button", {
+                    onClick: () => receiveMoney(inv.id),
+                    className:"bg-emerald-500 text-white px-4 py-2 rounded-xl font-bold shadow-md text-xs"
+                  }, "รับเงิน") : null
+                ])
+              ]);
+            })
+          )
+        ]);
+      }
 
-          </main>
-        </div>
-      );
-    };
+      function Expense() {
+        const [date, setDate] = useState(toDateISO(new Date()));
+        const [amt, setAmt] = useState("");
+        const [note, setNote] = useState("");
 
-    // -----------------------------
-    // Components
-    // -----------------------------
-    const NavItem = ({ active, onClick, icon, label }) => (
-      <button onClick={onClick} className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-all ${
-        active ? 'sidebar-active text-white' : 'text-slate-400 hover:bg-white/5 hover:text-slate-200'
-      }`}>
-        <i data-lucide={icon} className="w-5 h-5"></i>
-        <span className="text-sm font-bold">{label}</span>
-      </button>
-    );
+        const save = () => {
+          const a = Number(amt);
+          if (Number.isNaN(a) || a <= 0) return alert("กรุณาใส่ยอดรายจ่ายให้ถูกต้อง");
+          setExpenses([...(expenses || []), { id: uid(), date, amount: a, note: note || "" }]);
+          setActiveTab("dashboard");
+        };
 
-    const StatCard = ({ label, value, color, icon, bg="bg-white", sub }) => (
-      <div className={`p-6 rounded-3xl border border-slate-200 glass-card shadow-sm ${bg}`}>
-        <div className="flex justify-between items-center mb-4">
-          <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">{label}</p>
-          <div className="p-2 bg-slate-50 rounded-xl text-slate-300"><i data-lucide={icon} className="w-4 h-4"></i></div>
-        </div>
-        <h3 className={`text-2xl font-black ${color} tracking-tight`}>฿{formatMoney(value).split('.')[0]}</h3>
-        <p className="text-[9px] font-bold text-slate-300 uppercase mt-1">{sub}</p>
-      </div>
-    );
+        return h("div", { className:"max-w-xl mx-auto space-y-6 animate-in py-10" }, [
+          h("div", { className:"glass-card p-8 rounded-3xl shadow-lg" }, [
+            h("h2", { className:"text-xl font-black text-red-600 mb-6 flex items-center gap-2" }, [
+              h(Icon, { name:"wallet" }), "บันทึกรายจ่าย"
+            ]),
+            h("div", { className:"grid grid-cols-2 gap-4 mb-4" }, [
+              h("div", {}, [
+                h("label", { className:"text-xs font-bold text-slate-500" }, "วันที่"),
+                h("input", { type:"date", value: date, onChange:e=>setDate(e.target.value), className:"input-premium" })
+              ]),
+              h("div", {}, [
+                h("label", { className:"text-xs font-bold text-slate-500" }, "ยอดเงิน"),
+                h("input", { type:"number", value: amt, onChange:e=>setAmt(e.target.value), className:"input-premium text-red-600 font-black text-xl", placeholder:"0.00" })
+              ])
+            ]),
+            h("textarea", { value: note, onChange:e=>setNote(e.target.value), className:"input-premium h-24 mb-4", placeholder:"รายละเอียดค่าใช้จ่าย..." }),
+            h("button", { onClick: save, className:"w-full bg-red-600 text-white font-black py-4 rounded-2xl shadow-lg hover:bg-red-700 transition-all" }, "บันทึก")
+          ])
+        ]);
+      }
 
-    const RecordInvoice = ({ products, onSave }) => {
-      const dateRef = useRef(null);
-      const custRef = useRef(null);
+      function Settings() {
+        const totalPercent = (shareholders || []).reduce((s,h) => s + (Number(h.percent)||0), 0);
 
-      useEffect(() => {
-        try { if (window.lucide) window.lucide.createIcons(); } catch(e){}
-      }, []);
+        const updateProd = (idx, patch) => {
+          const next = (products || []).slice();
+          next[idx] = { ...next[idx], ...patch };
+          setProducts(next);
+        };
 
-      return (
-        <div className="max-w-xl mx-auto space-y-6 animate-in">
-          <h2 className="text-2xl font-black text-slate-800 border-l-4 border-blue-600 pl-4">ออกใบแจ้งหนี้ (Sale)</h2>
+        const updateShare = (idx, patch) => {
+          const next = (shareholders || []).slice();
+          next[idx] = { ...next[idx], ...patch };
+          setShareholders(next);
+        };
 
-          <div className="glass-card p-8 rounded-3xl shadow-xl space-y-6">
-            <div className="grid grid-cols-2 gap-4">
-              <div>
-                <label className="text-xs font-bold text-slate-400 ml-2">วันที่</label>
-                <input ref={dateRef} type="date" defaultValue={new Date().toISOString().split('T')[0]} className="input-premium" />
-              </div>
-              <div>
-                <label className="text-xs font-bold text-slate-400 ml-2">ลูกค้า</label>
-                <input ref={custRef} className="input-premium" placeholder="ชื่อลูกค้า..." />
-              </div>
-            </div>
+        return h("div", { className:"space-y-10 animate-in max-w-4xl mx-auto pb-20" }, [
+          h("section", { key:"p" }, [
+            h("h3", { className:"text-lg font-black text-slate-800 mb-4 border-l-4 border-blue-600 pl-3" }, "ตั้งค่าสินค้า (Products)"),
+            h("div", { className:"space-y-3" },
+              (products || []).map((p, idx) => h("div", { key:p.id, className:"bg-white p-4 rounded-2xl border flex items-center gap-4 shadow-sm" }, [
+                h("div", { className:"w-10 h-10 rounded-xl flex items-center justify-center text-white font-bold", style:{ backgroundColor: p.color } }, p.id.replace("p","")),
+                h("div", { className:"flex-1 font-bold text-slate-700" }, p.name),
+                h("div", { className:"flex gap-2" }, [
+                  h("div", { className:"w-28" }, [
+                    h("label", { className:"text-[9px] font-bold text-slate-400 block text-center" }, "ทุน RM"),
+                    h("input", {
+                      type:"number",
+                      value: p.rmCost,
+                      onChange: e => updateProd(idx, { rmCost: Number(e.target.value||0) }),
+                      className:"w-full p-2 bg-slate-50 rounded-xl font-bold text-center"
+                    })
+                  ]),
+                  h("div", { className:"w-28" }, [
+                    h("label", { className:"text-[9px] font-bold text-slate-400 block text-center" }, "ราคาขาย"),
+                    h("input", {
+                      type:"number",
+                      value: p.price,
+                      onChange: e => updateProd(idx, { price: Number(e.target.value||0) }),
+                      className:"w-full p-2 bg-slate-50 rounded-xl font-bold text-center text-blue-600"
+                    })
+                  ])
+                ])
+              ]))
+            )
+          ]),
 
-            <div className="space-y-3 max-h-[300px] overflow-y-auto">
-              {products.map(p => (
-                <div key={p.id} className="flex items-center gap-4 p-4 bg-white rounded-2xl border hover:border-blue-500 transition-all">
-                  <div className="flex-1 font-bold">{p.name} <span className="text-xs text-slate-400">@{p.price}</span></div>
-                  <div className="w-24 relative">
-                    <input
-                      type="number"
-                      placeholder="0"
-                      data-pid={p.id}
-                      className="inv-item-input w-full p-2 bg-slate-50 rounded-xl text-right font-bold outline-none"
-                    />
-                    <span className="absolute right-2 top-1.5 text-xs text-slate-400">Kg</span>
-                  </div>
-                </div>
-              ))}
-            </div>
+          h("section", { key:"s" }, [
+            h("div", { className:"flex justify-between items-center mb-4 border-l-4 border-emerald-500 pl-3" }, [
+              h("h3", { className:"text-lg font-black text-slate-800" }, "ผู้ถือหุ้น (Shareholders)"),
+              h("button", {
+                onClick: () => setShareholders([...(shareholders||[]), { id: uid(), name:"เพิ่มใหม่", percent: 0, color:"#94a3b8" }]),
+                className:"bg-slate-900 text-white px-3 py-1 rounded-lg text-xs font-bold"
+              }, "+ เพิ่ม")
+            ]),
 
-            <button
-              onClick={() => {
-                const cust = (custRef.current?.value || '').trim();
-                const date = (dateRef.current?.value || new Date().toISOString().split('T')[0]);
+            h("div", { className:"space-y-3" },
+              (shareholders || []).map((sh, idx) => h("div", { key: sh.id, className:"bg-white p-4 rounded-2xl border flex items-center gap-4 shadow-sm" }, [
+                h("div", { className:"w-8 h-8 rounded-full", style:{ backgroundColor: sh.color } }),
+                h("div", { className:"flex-1 font-bold" },
+                  h("input", {
+                    value: sh.name,
+                    onChange: e => updateShare(idx, { name: e.target.value }),
+                    className:"bg-transparent border-none outline-none w-full"
+                  })
+                ),
+                h("div", { className:"w-24" },
+                  h("input", {
+                    type:"number",
+                    value: sh.percent,
+                    onChange: e => updateShare(idx, { percent: Number(e.target.value||0) }),
+                    className:"w-full p-2 bg-slate-50 rounded-xl font-bold text-center text-emerald-600"
+                  })
+                ),
+                h("button", {
+                  onClick: () => setShareholders((shareholders||[]).filter((_,i)=>i!==idx)),
+                  className:"text-red-400"
+                }, h(Icon, { name:"trash-2", className:"w-5 h-5" }))
+              ]))
+            ),
 
-                const items = {};
-                let total = 0;
+            h("div", {
+              className: `text-center text-xs font-bold mt-2 ${totalPercent===100 ? "text-green-600" : "text-red-600"}`
+            }, `รวมเปอร์เซ็นต์: ${totalPercent}% (ต้องครบ 100)`)
+          ])
+        ]);
+      }
 
-                document.querySelectorAll('.inv-item-input').forEach(input => {
-                  const q = toNumber(input.value, 0);
-                  if (q > 0) {
-                    const pid = input.dataset.pid;
-                    items[pid] = q;
-                    const p = products.find(x => x.id === pid);
-                    total += q * toNumber(p?.price, 0);
-                  }
-                });
+      // -----------------------------
+      // Layout
+      // -----------------------------
+      return h("div", { className:"flex flex-col md:flex-row min-h-screen" }, [
+        // Sidebar
+        h("nav", { className:"w-full md:w-72 bg-[#0f172a] p-6 flex flex-col no-print shrink-0 border-r border-white/5 shadow-2xl" }, [
+          h("div", { className:"flex items-center gap-4 mb-10 px-2" }, [
+            h("div", { className:"bg-blue-600 p-3 rounded-2xl text-white shadow-xl shadow-blue-500/20" }, h(Icon, { name:"cooking-pot", className:"w-6 h-6" })),
+            h("div", {}, [
+              h("h1", { className:"text-white font-bold text-xl tracking-tight" }, "BKP SYSTEM"),
+              h("span", { className:"text-blue-400 text-[10px] font-bold" }, "ครัวกลางมืออาชีพ")
+            ])
+          ]),
 
-                if (!cust) return alert("กรุณาระบุชื่อลูกค้า");
-                if (total <= 0) return alert("กรุณาใส่จำนวนสินค้าอย่างน้อย 1 รายการ");
+          h("div", { className:"flex-1 space-y-1 overflow-y-auto no-scrollbar" }, [
+            h(NavItem, { active: activeTab==="dashboard", onClick:()=>setActiveTab("dashboard"), icon:"layout-dashboard", label:"หน้าหลัก (Dashboard)", key:"n1" }),
+            h(NavItem, { active: activeTab==="report", onClick:()=>setActiveTab("report"), icon:"file-text", label:"รายงานผู้ถือหุ้น", key:"n2" }),
+            h(NavItem, { active: activeTab==="settlement", onClick:()=>setActiveTab("settlement"), icon:"calculator", label:"ยอดโอนค่าแรงผลิต", key:"n3" }),
+            h(NavItem, { active: activeTab==="watchdog", onClick:()=>setActiveTab("watchdog"), icon:"shield-alert", label:"เฝ้าระวังกำไร", key:"n4" }),
 
-                const inv = {
-                  id: Date.now(),
-                  date,
-                  customerName: cust,
-                  items,
-                  total,
-                  status: 'Unpaid',
-                  paidAmount: 0
-                };
+            h("div", { className:"pt-6 pb-2 px-4 text-[10px] text-slate-500 font-bold uppercase tracking-widest" }, "การทำงาน"),
+            h(NavItem, { active: activeTab==="record", onClick:()=>setActiveTab("record"), icon:"shopping-cart", label:"ออกบิลใหม่", key:"n5" }),
+            h(NavItem, { active: activeTab==="history", onClick:()=>setActiveTab("history"), icon:"history", label:"ประวัติลูกหนี้", key:"n6" }),
+            h(NavItem, { active: activeTab==="expense", onClick:()=>setActiveTab("expense"), icon:"wallet", label:"บันทึกรายจ่าย", key:"n7" }),
 
-                onSave(inv);
-              }}
-              className="w-full bg-blue-600 text-white font-black py-4 rounded-2xl shadow-lg hover:scale-105 transition-all text-lg">
-              บันทึกบิล
-            </button>
-          </div>
-        </div>
-      );
-    };
+            h("div", { className:"pt-6 pb-2 px-4 text-[10px] text-slate-500 font-bold uppercase tracking-widest" }, "ตั้งค่า"),
+            h(NavItem, { active: activeTab==="settings", onClick:()=>setActiveTab("settings"), icon:"settings", label:"จัดการหุ้น & สินค้า", key:"n8" })
+          ])
+        ]),
 
-    const ExpenseForm = ({ onSave }) => {
-      const dateRef = useRef(null);
-      const amtRef = useRef(null);
-      const noteRef = useRef(null);
+        // Main
+        h("main", { className:"flex-1 p-4 md:p-8 overflow-y-auto" }, [
+          activeTab==="dashboard" ? h(Dashboard) :
+          activeTab==="report" ? h(Report) :
+          activeTab==="settlement" ? h(Settlement) :
+          activeTab==="watchdog" ? h(Watchdog) :
+          activeTab==="record" ? h(RecordSale) :
+          activeTab==="history" ? h(History) :
+          activeTab==="expense" ? h(Expense) :
+          activeTab==="settings" ? h(Settings) :
+          h("div", { className:"p-6 bg-white rounded-3xl" }, "ไม่พบหน้า")
+        ])
+      ]);
+    }
 
-      useEffect(() => {
-        try { if (window.lucide) window.lucide.createIcons(); } catch(e){}
-      }, []);
-
-      return (
-        <div className="max-w-xl mx-auto space-y-6 animate-in py-10">
-          <div className="glass-card p-8 rounded-3xl shadow-lg">
-            <h2 className="text-xl font-black text-red-600 mb-6 flex items-center gap-2">
-              <i data-lucide="wallet"></i> บันทึกรายจ่าย
-            </h2>
-
-            <div className="grid grid-cols-2 gap-4 mb-4">
-              <div>
-                <label className="text-xs font-bold text-slate-500">วันที่</label>
-                <input ref={dateRef} type="date" defaultValue={new Date().toISOString().split('T')[0]} className="input-premium" />
-              </div>
-              <div>
-                <label className="text-xs font-bold text-slate-500">ยอดเงิน</label>
-                <input ref={amtRef} type="number" className="input-premium text-red-600 font-black text-xl" placeholder="0.00" />
-              </div>
-            </div>
-
-            <textarea ref={noteRef} className="input-premium h-24 mb-4" placeholder="รายละเอียดค่าใช้จ่าย..."></textarea>
-
-            <button
-              onClick={() => {
-                const amount = toNumber(amtRef.current?.value, NaN);
-                if (!Number.isFinite(amount) || amount <= 0) return alert("กรุณาใส่ยอดเงินให้ถูกต้อง");
-
-                const exp = {
-                  id: Date.now(),
-                  date: (dateRef.current?.value || new Date().toISOString().split('T')[0]),
-                  amount,
-                  note: (noteRef.current?.value || '').trim()
-                };
-                onSave(exp);
-              }}
-              className="w-full bg-red-600 text-white font-black py-4 rounded-2xl shadow-lg hover:bg-red-700 transition-all">
-              บันทึก
-            </button>
-          </div>
-        </div>
-      );
-    };
-
-    const Settings = ({ products, setProducts, opCosts, setOpCosts, shareholders, setShareholders }) => {
-      const totalShare = useMemo(() => (shareholders || []).reduce((s, h) => s + toNumber(h.percent, 0), 0), [shareholders]);
-
-      useEffect(() => {
-        try { if (window.lucide) window.lucide.createIcons(); } catch(e){}
-      }, [shareholders, products]);
-
-      return (
-        <div className="space-y-10 animate-in max-w-4xl mx-auto pb-20">
-          {/* Products */}
-          <section>
-            <h3 className="text-lg font-black text-slate-800 mb-4 border-l-4 border-blue-600 pl-3">ตั้งค่าสินค้า (Products)</h3>
-            <div className="space-y-3">
-              {products.map((p, idx) => (
-                <div key={p.id} className="bg-white p-4 rounded-2xl border flex items-center gap-4 shadow-sm">
-                  <div className="w-10 h-10 rounded-xl flex items-center justify-center text-white font-bold" style={{backgroundColor:p.color || '#64748b'}}>
-                    {String(p.id).replace('p','')}
-                  </div>
-                  <div className="flex-1 font-bold text-slate-700">{p.name}</div>
-
-                  <div className="flex gap-2">
-                    <div className="w-28">
-                      <label className="text-[9px] font-bold text-slate-400 block text-center">ทุน RM</label>
-                      <input
-                        type="number"
-                        value={toNumber(p.rmCost,0)}
-                        onChange={e => {
-                          const n = [...products];
-                          n[idx] = { ...n[idx], rmCost: toNumber(e.target.value, 0) };
-                          setProducts(n);
-                        }}
-                        className="w-full p-2 bg-slate-50 rounded-xl font-bold text-center"
-                      />
-                    </div>
-
-                    <div className="w-28">
-                      <label className="text-[9px] font-bold text-slate-400 block text-center">ราคาขาย</label>
-                      <input
-                        type="number"
-                        value={toNumber(p.price,0)}
-                        onChange={e => {
-                          const n = [...products];
-                          n[idx] = { ...n[idx], price: toNumber(e.target.value, 0) };
-                          setProducts(n);
-                        }}
-                        className="w-full p-2 bg-slate-50 rounded-xl font-bold text-center text-blue-600"
-                      />
-                    </div>
-                  </div>
-                </div>
-              ))}
-            </div>
-          </section>
-
-          {/* OpCosts */}
-          <section>
-            <h3 className="text-lg font-black text-slate-800 mb-4 border-l-4 border-slate-900 pl-3">ต้นทุนแฝงต่อกิโล (OpCosts)</h3>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-              {Object.entries(opCosts || {}).map(([k,v]) => (
-                <div key={k} className="bg-white p-4 rounded-2xl border flex items-center justify-between shadow-sm">
-                  <div>
-                    <p className="font-black uppercase text-sm">{k}</p>
-                    <p className="text-xs text-slate-400">บาท/กก.</p>
-                  </div>
-                  <input
-                    type="number"
-                    value={toNumber(v,0)}
-                    onChange={e => setOpCosts({ ...(opCosts||{}), [k]: toNumber(e.target.value,0) })}
-                    className="w-28 p-2 bg-slate-50 rounded-xl font-black text-center text-slate-900"
-                  />
-                </div>
-              ))}
-            </div>
-          </section>
-
-          {/* Shareholders */}
-          <section>
-            <div className="flex justify-between items-center mb-4 border-l-4 border-emerald-500 pl-3">
-              <h3 className="text-lg font-black text-slate-800">ผู้ถือหุ้น (Shareholders)</h3>
-              <button
-                onClick={() => setShareholders([...(shareholders||[]), { id:'sh'+Date.now(), name:'เพิ่มใหม่', percent: 0, color:'#94a3b8' }])}
-                className="bg-slate-900 text-white px-3 py-1 rounded-lg text-xs font-bold">
-                + เพิ่ม
-              </button>
-            </div>
-
-            <div className="space-y-3">
-              {(shareholders||[]).map((sh, idx) => (
-                <div key={sh.id || idx} className="bg-white p-4 rounded-2xl border flex items-center gap-4 shadow-sm">
-                  <div className="w-8 h-8 rounded-full" style={{backgroundColor:sh.color || '#94a3b8'}}></div>
-
-                  <div className="flex-1 font-bold">
-                    <input
-                      value={sh.name || ''}
-                      onChange={e => {
-                        const n = [...shareholders];
-                        n[idx] = { ...n[idx], name: e.target.value };
-                        setShareholders(n);
-                      }}
-                      className="bg-transparent border-none outline-none w-full"
-                    />
-                  </div>
-
-                  <div className="w-24">
-                    <input
-                      type="number"
-                      value={toNumber(sh.percent,0)}
-                      onChange={e => {
-                        const n = [...shareholders];
-                        n[idx] = { ...n[idx], percent: toNumber(e.target.value,0) };
-                        setShareholders(n);
-                      }}
-                      className="w-full p-2 bg-slate-50 rounded-xl font-bold text-center text-emerald-600"
-                    />
-                  </div>
-
-                  <button
-                    onClick={() => setShareholders((shareholders||[]).filter((_, i) => i !== idx))}
-                    className="text-red-400">
-                    <i data-lucide="trash-2" className="w-5 h-5"></i>
-                  </button>
-                </div>
-              ))}
-
-              <div className={`text-center text-xs font-bold ${totalShare===100 ? 'text-green-500' : 'text-red-500'}`}>
-                รวมเปอร์เซ็นต์: {totalShare}% (ต้องครบ 100)
-              </div>
-            </div>
-          </section>
-        </div>
-      );
-    };
-
-    // -----------------------------
     // Mount
-    // -----------------------------
-    const rootEl = document.getElementById('root');
-    const root = ReactDOM.createRoot(rootEl);
-    root.render(
-      <ErrorBoundary>
-        <App />
-      </ErrorBoundary>
-    );
-  </script>
+    const root = ReactDOM.createRoot(document.getElementById("root"));
+    root.render(h(App));
+
+    // If still on loader after 12s, show hint
+    setTimeout(() => {
+      // if root still contains loader text
+      const t = document.body.innerText || "";
+      if (t.includes("กำลังโหลดระบบ BKP")) {
+        showFatal("App ยังไม่เริ่ม render (อาจโหลด CDN ไม่ครบ หรือโดนบล็อก). ลอง Cmd+Shift+R และดู Console.");
+      }
+    }, 12000);
+
+  } catch (err) {
+    showFatal(err);
+  }
+})();
+</script>
 </body>
 </html>
