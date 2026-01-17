@@ -3,1095 +3,2835 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>BKP ERP v3-A | Core + Migration</title>
+  <title>BKP ERP v3 PRO | Premium (Single File + Auto-Migration)</title>
+
+  <!-- Premium UI -->
+  <script src="https://cdn.tailwindcss.com"></script>
   <link href="https://fonts.googleapis.com/css2?family=Sarabun:wght@300;400;600;700;800&display=swap" rel="stylesheet">
+
   <style>
     :root{
-      --bg:#f1f5f9; --card:#ffffff; --ink:#0f172a; --muted:#64748b; --line:#e2e8f0;
-      --pri:#2563eb; --pri2:#1d4ed8; --ok:#16a34a; --warn:#dc2626; --slate:#0f172a;
-      --soft:#f8fafc;
+      --bg0:#070B16;
+      --bg1:#0B1226;
+      --card:rgba(255,255,255,.08);
+      --card2:rgba(255,255,255,.10);
+      --stroke:rgba(255,255,255,.14);
+      --muted:rgba(255,255,255,.65);
+      --muted2:rgba(255,255,255,.45);
+      --good:#22c55e;
+      --warn:#f59e0b;
+      --bad:#ef4444;
+      --pri:#3b82f6;
+      --pri2:#60a5fa;
     }
-    *{box-sizing:border-box}
     html,body{height:100%}
-    body{margin:0;font-family:"Sarabun",system-ui;background:var(--bg);color:var(--ink)}
-    a{color:inherit}
-    .app{display:flex;min-height:100vh}
-    .sidebar{width:280px;background:var(--slate);color:#fff;padding:18px 14px;position:sticky;top:0;height:100vh;overflow:auto}
-    .brand{display:flex;gap:10px;align-items:center;margin-bottom:14px;padding:8px 10px;border:1px solid rgba(255,255,255,.08);border-radius:14px}
-    .brand .logo{width:40px;height:40px;border-radius:14px;background:var(--pri);display:flex;align-items:center;justify-content:center;font-weight:900}
-    .brand h1{font-size:16px;margin:0}
-    .brand small{display:block;color:rgba(255,255,255,.65);font-weight:700;letter-spacing:.2px}
-    .navgrp{margin-top:12px}
-    .navttl{padding:10px 12px;color:rgba(255,255,255,.45);font-weight:900;font-size:11px;letter-spacing:.12em;text-transform:uppercase}
-    .nav button{width:100%;text-align:left;border:none;background:transparent;color:rgba(255,255,255,.78);padding:10px 12px;border-radius:12px;cursor:pointer;display:flex;gap:10px;align-items:center;font-weight:800}
-    .nav button:hover{background:rgba(255,255,255,.06);color:#fff}
-    .nav button.active{background:var(--pri);color:#fff;box-shadow:0 10px 25px rgba(37,99,235,.25)}
-    .nav .dot{width:10px;height:10px;border-radius:999px;background:rgba(255,255,255,.25)}
-    .nav button.active .dot{background:#fff}
-    .main{flex:1;padding:18px;overflow:auto}
-    .topbar{display:flex;align-items:flex-end;justify-content:space-between;gap:12px;margin-bottom:16px}
-    .topbar h2{margin:0;font-size:22px;font-weight:900}
-    .topbar .sub{color:var(--muted);font-weight:800;font-size:12px}
-    .topbar .right{display:flex;gap:8px;flex-wrap:wrap}
-    .btn{border:none;border-radius:12px;padding:10px 12px;font-weight:900;cursor:pointer}
-    .btn.pri{background:var(--pri);color:#fff}
-    .btn.pri:hover{background:var(--pri2)}
-    .btn.ghost{background:#fff;border:1px solid var(--line)}
-    .btn.ghost:hover{background:var(--soft)}
-    .btn.danger{background:#fee2e2;color:#991b1b;border:1px solid #fecaca}
-    .btn.ok{background:#dcfce7;color:#166534;border:1px solid #bbf7d0}
-    .grid{display:grid;gap:12px}
-    .g4{grid-template-columns:repeat(4,minmax(0,1fr))}
-    .g3{grid-template-columns:repeat(3,minmax(0,1fr))}
-    .g2{grid-template-columns:repeat(2,minmax(0,1fr))}
-    @media (max-width:1200px){.g4{grid-template-columns:repeat(2,minmax(0,1fr))}}
-    @media (max-width:760px){
-      .sidebar{display:none}
-      .main{padding:12px}
-      .g4,.g3,.g2{grid-template-columns:1fr}
+    body{
+      font-family:'Sarabun',system-ui,-apple-system,Segoe UI,Roboto,Arial;
+      background: radial-gradient(1200px 600px at 10% 10%, rgba(59,130,246,.25), transparent 60%),
+                  radial-gradient(900px 500px at 90% 30%, rgba(168,85,247,.18), transparent 60%),
+                  radial-gradient(900px 500px at 60% 90%, rgba(34,197,94,.12), transparent 55%),
+                  linear-gradient(180deg, var(--bg0), var(--bg1));
+      color:#e5e7eb;
     }
-    .card{background:var(--card);border:1px solid var(--line);border-radius:18px;padding:14px}
-    .card.hi{border-left:6px solid var(--pri)}
-    .stat{display:flex;justify-content:space-between;gap:10px;align-items:flex-start}
-    .stat .k{font-size:11px;font-weight:900;color:var(--muted);letter-spacing:.12em;text-transform:uppercase}
-    .stat .v{font-size:22px;font-weight:1000;margin-top:6px}
-    .stat .s{font-size:11px;font-weight:800;color:#94a3b8}
-    .chip{display:inline-flex;gap:6px;align-items:center;padding:4px 8px;border-radius:999px;font-weight:900;font-size:11px;border:1px solid var(--line);background:var(--soft);color:var(--ink)}
-    .chip.ok{background:#dcfce7;border-color:#bbf7d0;color:#166534}
-    .chip.wait{background:#fee2e2;border-color:#fecaca;color:#991b1b}
-    .row{display:flex;gap:10px;flex-wrap:wrap;align-items:end}
-    label{display:block;font-weight:900;color:var(--muted);font-size:12px;margin:0 0 6px 2px}
-    input,select,textarea{width:100%;padding:10px 12px;border-radius:12px;border:1px solid var(--line);background:#fff;font-weight:800;outline:none}
-    textarea{min-height:90px;resize:vertical}
-    input:focus,select:focus,textarea:focus{border-color:#93c5fd;box-shadow:0 0 0 3px rgba(147,197,253,.35)}
-    table{width:100%;border-collapse:separate;border-spacing:0;border:1px solid var(--line);border-radius:14px;overflow:hidden}
-    th,td{padding:10px 10px;border-bottom:1px solid var(--line);font-size:13px}
-    th{background:var(--soft);text-align:left;color:#475569;font-weight:1000}
-    tr:last-child td{border-bottom:none}
-    .tdr{text-align:right}
+    .glass{background:var(--card); border:1px solid var(--stroke); backdrop-filter: blur(16px);}
+    .glass2{background:var(--card2); border:1px solid var(--stroke); backdrop-filter: blur(16px);}
+    .soft-shadow{box-shadow: 0 20px 60px rgba(0,0,0,.35);}
+    .btn{
+      display:inline-flex; align-items:center; justify-content:center; gap:.5rem;
+      border-radius: .85rem; padding: .7rem 1rem; font-weight: 800;
+      transition:.15s transform, .15s opacity, .15s background;
+      user-select:none;
+    }
+    .btn:active{transform:scale(.98)}
+    .btn-primary{background:linear-gradient(135deg, rgba(59,130,246,1), rgba(96,165,250,1)); color:#0b1226;}
+    .btn-dark{background:rgba(255,255,255,.10); border:1px solid rgba(255,255,255,.14);}
+    .btn-danger{background:rgba(239,68,68,.18); border:1px solid rgba(239,68,68,.35); color:#fecaca;}
+    .btn-good{background:rgba(34,197,94,.18); border:1px solid rgba(34,197,94,.35); color:#bbf7d0;}
+    .btn-warn{background:rgba(245,158,11,.18); border:1px solid rgba(245,158,11,.35); color:#fde68a;}
+    .input{
+      width:100%; border-radius: .85rem; padding:.75rem .9rem; font-weight:700;
+      background:rgba(255,255,255,.08); border:1px solid rgba(255,255,255,.14);
+      outline:none;
+    }
+    .input:focus{border-color: rgba(96,165,250,.75); box-shadow:0 0 0 3px rgba(59,130,246,.18)}
     .muted{color:var(--muted)}
-    .hr{height:1px;background:var(--line);margin:12px 0}
-    .hint{font-size:12px;font-weight:800;color:#64748b;line-height:1.5}
-    .warnbox{background:#fff7ed;border:1px solid #fed7aa;color:#9a3412;padding:10px 12px;border-radius:14px;font-weight:900}
-    .okbox{background:#ecfeff;border:1px solid #a5f3fc;color:#155e75;padding:10px 12px;border-radius:14px;font-weight:900}
-    .pillbar{display:flex;gap:8px;flex-wrap:wrap}
-    .pill{background:#fff;border:1px solid var(--line);border-radius:999px;padding:8px 10px;font-weight:1000;cursor:pointer}
-    .pill.active{background:var(--pri);color:#fff;border-color:var(--pri)}
-    .no-print{}
+    .muted2{color:var(--muted2)}
+    .chip{
+      display:inline-flex; align-items:center; gap:.4rem;
+      padding:.25rem .55rem; border-radius:999px;
+      border:1px solid rgba(255,255,255,.14);
+      background:rgba(255,255,255,.08);
+      font-size:.75rem; font-weight:800;
+    }
+    .chip-good{border-color:rgba(34,197,94,.35); background:rgba(34,197,94,.12); color:#bbf7d0;}
+    .chip-bad{border-color:rgba(239,68,68,.35); background:rgba(239,68,68,.12); color:#fecaca;}
+    .chip-warn{border-color:rgba(245,158,11,.35); background:rgba(245,158,11,.12); color:#fde68a;}
+    .table{
+      width:100%;
+      border-collapse:separate;
+      border-spacing:0;
+      overflow:hidden;
+      border-radius: 1.2rem;
+      border:1px solid rgba(255,255,255,.12);
+      background:rgba(255,255,255,.05);
+    }
+    .table th{
+      text-align:left;
+      font-size:.75rem;
+      letter-spacing:.06em;
+      text-transform:uppercase;
+      color:rgba(255,255,255,.7);
+      background:rgba(255,255,255,.06);
+      padding:.85rem .9rem;
+      border-bottom:1px solid rgba(255,255,255,.10);
+      white-space:nowrap;
+    }
+    .table td{
+      padding:.8rem .9rem;
+      border-bottom:1px solid rgba(255,255,255,.06);
+      vertical-align:top;
+    }
+    .table tr:last-child td{border-bottom:none}
+    .no-scrollbar::-webkit-scrollbar{display:none}
+    .no-scrollbar{scrollbar-width:none}
+    .sidebar-item{
+      width:100%;
+      display:flex; gap:.75rem; align-items:center;
+      padding:.8rem .9rem;
+      border-radius:1rem;
+      color:rgba(255,255,255,.75);
+      font-weight:900;
+      transition:.15s background, .15s transform;
+    }
+    .sidebar-item:hover{background:rgba(255,255,255,.06)}
+    .sidebar-item.active{
+      background:linear-gradient(135deg, rgba(59,130,246,.22), rgba(168,85,247,.14));
+      border:1px solid rgba(96,165,250,.35);
+      color:white;
+    }
+    .mono{font-variant-numeric: tabular-nums;}
+    .modal-backdrop{
+      position:fixed; inset:0; background:rgba(0,0,0,.55);
+      display:flex; align-items:center; justify-content:center;
+      z-index:50;
+      padding:16px;
+    }
+    .modal{width:min(920px, 100%); border-radius:1.5rem;}
+    .kpi{
+      border-radius:1.5rem;
+      padding:1.1rem;
+      border:1px solid rgba(255,255,255,.12);
+      background:rgba(255,255,255,.06);
+    }
+    .kpi .label{font-size:.7rem; letter-spacing:.12em; text-transform:uppercase; color:rgba(255,255,255,.65); font-weight:900}
+    .kpi .value{font-size:1.6rem; font-weight:900}
+    .kpi .sub{font-size:.75rem; color:rgba(255,255,255,.55); font-weight:800}
     @media print{
-      .no-print{display:none !important}
-      body{background:#fff;-webkit-print-color-adjust:exact;print-color-adjust:exact}
-      .main{padding:0}
-      .card{border:none;border-radius:0}
-      table{border:1px solid #cbd5e1}
-      th{background:#f1f5f9 !important}
+      .no-print{display:none !important;}
+      body{background:#fff; color:#111827;}
+      .glass,.glass2,.kpi,.table{background:#fff !important; border-color:#e5e7eb !important; color:#111827 !important;}
+      .muted,.muted2{color:#6b7280 !important;}
+      .table th{background:#f3f4f6 !important; color:#111827 !important;}
+      .table td{border-color:#e5e7eb !important;}
+      a{color:#111827 !important; text-decoration:none !important;}
     }
   </style>
 </head>
+
 <body>
-<div class="app">
-  <aside class="sidebar no-print">
-    <div class="brand">
-      <div class="logo">BKP</div>
-      <div>
-        <h1>ระบบบริหารครัวกลาง</h1>
-        <small>v3-A Core + Migration</small>
-      </div>
-    </div>
-    <div class="navgrp">
-      <div class="navttl">ภาพรวม</div>
-      <div class="nav" id="nav"></div>
-    </div>
-    <div class="navgrp">
-      <div class="navttl">เครื่องมือข้อมูล</div>
-      <div class="card" style="background:rgba(255,255,255,.05);border-color:rgba(255,255,255,.08)">
-        <div class="hint" style="color:rgba(255,255,255,.75)">
-          ✅ ระบบจะดึงข้อมูลเวอร์ชัน 1 อัตโนมัติครั้งแรก<br>
-          ✅ ข้อมูลเดิมจะไม่ถูกลบ<br>
-          ⚠️ ถ้าต้องย้ายเครื่อง: ใช้ “ส่งออกข้อมูล”
-        </div>
-        <div class="hr" style="background:rgba(255,255,255,.12)"></div>
-        <button class="btn ghost" style="width:100%" onclick="Actions.exportDB()">ส่งออกข้อมูล (JSON)</button>
-        <div style="height:8px"></div>
-        <button class="btn ghost" style="width:100%" onclick="Actions.importDB()">นำเข้าข้อมูล (JSON)</button>
-      </div>
-    </div>
-  </aside>
+  <div id="root" class="min-h-screen"></div>
 
-  <main class="main">
-    <div class="topbar no-print">
-      <div>
-        <h2 id="title">กำลังโหลดระบบ…</h2>
-        <div class="sub" id="subtitle">โปรดรอสักครู่</div>
-      </div>
-      <div class="right">
-        <button class="btn ghost" onclick="Actions.print()">พิมพ์ / PDF</button>
-        <button class="btn ok" onclick="Actions.backupHint()">วิธีสำรองเร็ว</button>
-      </div>
-    </div>
-    <div id="root"></div>
-  </main>
-</div>
+  <script>
+  /********************************************************************
+   * BKP ERP v3 PRO (Premium) - Single File
+   * - Auto-migration from v1 (unknown keys) + import from older v3 keys
+   * - Does NOT clear old data
+   * - CRUD: Customers, Products, Sales+Receipts, PO, Expenses+Vouchers,
+   *         Shareholders+Capital, Profit Periods+Allocation+Pending
+   * - Range-based reports + print-to-PDF (browser print) for all docs
+   ********************************************************************/
 
-<script>
-/* =========================================================
-   BKP ERP v3-A Core + Migration
-   - เป้าหมาย: ใช้งานได้ทันที, ข้อมูล v1 ไม่หาย, ฟังก์ชัน core ครบ
-   - หมายเหตุ: เอกสาร PDF ใช้ window.print() (มาตรฐานสุด + รองรับทุกเครื่อง)
-========================================================= */
-
-/* ---------- 0) Helpers ---------- */
-const $$ = (sel, el=document) => el.querySelector(sel);
-const $$$ = (sel, el=document) => Array.from(el.querySelectorAll(sel));
-const fmtMoney = (n) => "฿" + (Number(n)||0).toLocaleString(undefined,{maximumFractionDigits:2});
-const fmtInt = (n) => (Number(n)||0).toLocaleString();
-const iso = (d=new Date()) => new Date(d).toISOString().split("T")[0];
-const uid = () => Date.now().toString(36) + Math.random().toString(36).slice(2,8);
-const safeJSON = (v) => { try{ return JSON.parse(v) }catch{ return null } };
-const isObj = (x) => x && typeof x === "object" && !Array.isArray(x);
-
-/* ---------- 1) Storage Keys (รองรับ v1 ที่คาดเดาไม่ได้) ---------- */
-const V3_KEY = "BKP_ERP_V3A_DB";
-const MIG_FLAG = "BKP_ERP_V3A_MIGRATED_ONCE";
-
-/* ---------- 2) Schema v3-A ---------- */
-const EMPTY = {
-  meta:{
-    schema:"v3-A",
-    createdAt: new Date().toISOString(),
-    migratedFromV1:false,
-    migrationNotes:[],
-  },
-  customers:[],     // {id,name,phone?,note?,createdAt}
-  products:[],      // {id,name,price, cost:{rm,hidden,op,other}, active, createdAt}
-  sales:[],         // {id,date,customerId,items:[{productId,qty,priceAtSale,costAtSale}], total, paid, status}
-  expenses:[],      // {id,date,category,amount,note}
-  po:[],            // {id,date,supplier,items:[{name,qty,unit,price}], total, paidAmount, status, note}
-  settings:{
-    expenseCategories:["ค่าแรง","ค่าทำบัญชี","ค่าไฟ","ค่าส่ง","ค่าวัตถุดิบ","อื่นๆ"]
-  }
-};
-
-/* ---------- 3) Load v3 ---------- */
-function loadV3(){
-  const raw = safeJSON(localStorage.getItem(V3_KEY));
-  if(raw && raw.meta?.schema==="v3-A") return raw;
-  return structuredClone(EMPTY);
-}
-let DB = loadV3();
-function save(){ localStorage.setItem(V3_KEY, JSON.stringify(DB)); }
-
-/* ---------- 4) MIGRATION from v1 (auto-detect, no delete) ---------- */
-function normalizeNumber(x){
-  const n = Number(x);
-  return Number.isFinite(n) ? n : 0;
-}
-function guessDate(x){
-  if(!x) return iso();
-  const d = new Date(x);
-  return isNaN(d.getTime()) ? iso() : iso(d);
-}
-function ensureCustomerByName(name){
-  if(!name) return null;
-  const nm = String(name).trim();
-  if(!nm) return null;
-  let c = DB.customers.find(x => x.name === nm);
-  if(!c){
-    c = {id:uid(), name:nm, createdAt:new Date().toISOString()};
-    DB.customers.push(c);
-  }
-  return c;
-}
-function ensureProductByNameMaybe(pname, priceHint=null, rmCostHint=null){
-  const nm = (pname?String(pname).trim():"");
-  if(!nm) return null;
-  let p = DB.products.find(x => x.name === nm);
-  if(!p){
-    const price = normalizeNumber(priceHint);
-    const rm = normalizeNumber(rmCostHint);
-    p = {
-      id:uid(),
-      name:nm,
-      price: price || 0,
-      cost:{rm: rm||0, hidden:0, op:0, other:0},
-      active:true,
-      createdAt:new Date().toISOString()
-    };
-    DB.products.push(p);
-  }
-  return p;
-}
-
-function scoreArray(arr){
-  // ให้คะแนนว่า array นี้ "น่าจะเป็นข้อมูลธุรกิจ" แค่ไหน
-  // เราดู key ที่พบบ่อยใน object แต่ละตัว
-  if(!Array.isArray(arr) || arr.length<1) return 0;
-  let score=0;
-  for(const it of arr.slice(0, Math.min(30,arr.length))){
-    if(!isObj(it)) continue;
-    const keys = Object.keys(it).map(k=>k.toLowerCase());
-    const has = (k) => keys.includes(k);
-    if(keys.includes("customername")||has("customer")||has("cust")||has("ลูกค้า")) score += 3;
-    if(has("total")||has("amount")||has("ยอด")||has("price")||has("rmcost")||has("cost")) score += 2;
-    if(has("date")||has("วันที่")) score += 1;
-    if(has("items")||has("product")||has("สินค้า")||has("qty")) score += 2;
-  }
-  return score;
-}
-
-function collectCandidateArraysFromLocalStorage(){
-  const arrays=[];
-  for(let i=0;i<localStorage.length;i++){
-    const key = localStorage.key(i);
-    if(key===V3_KEY || key===MIG_FLAG) continue;
-    const val = localStorage.getItem(key);
-    const parsed = safeJSON(val);
-    if(!parsed) continue;
-
-    if(Array.isArray(parsed)){
-      arrays.push({key,arr:parsed,score:scoreArray(parsed)});
-      continue;
-    }
-    if(isObj(parsed)){
-      for(const [k,v] of Object.entries(parsed)){
-        if(Array.isArray(v)){
-          arrays.push({key:`${key}.${k}`, arr:v, score:scoreArray(v)});
-        }
-      }
-    }
-  }
-  arrays.sort((a,b)=>b.score-a.score);
-  return arrays;
-}
-
-function migrateV1Once(){
-  const done = localStorage.getItem(MIG_FLAG);
-  if(done) return; // กัน migrate ซ้ำ
-  const candidates = collectCandidateArraysFromLocalStorage();
-
-  const notes=[];
-  let imported= {customers:0, products:0, sales:0, expenses:0};
-  const before = {
-    customers: DB.customers.length,
-    products: DB.products.length,
-    sales: DB.sales.length,
-    expenses: DB.expenses.length
-  };
-
-  // heuristic mapping: เราพยายามอ่านได้หลายรูปแบบ รวมทั้งรูปแบบจากโค้ด v1 ที่คุณเคยส่ง
-  for(const c of candidates){
-    const arr=c.arr;
-    if(!Array.isArray(arr) || arr.length<1 || c.score<3) continue;
-
-    for(const it of arr){
-      if(!isObj(it)) continue;
-      const keys = Object.keys(it);
-      const lowerKeys = keys.map(k=>k.toLowerCase());
-      const get = (...names) => {
-        for(const n of names){
-          const idx = lowerKeys.indexOf(String(n).toLowerCase());
-          if(idx>=0) return it[keys[idx]];
-        }
-        return undefined;
-      };
-
-      // --- Customer detection ---
-      // กรณีเป็น object ลูกค้าล้วน (name/phone/note)
-      const nameCandidate = get("customerName","customer","cust","name","ชื่อลูกค้า","ลูกค้า","ชื่อ");
-      const maybePhone = get("phone","tel","มือถือ","เบอร์");
-      const maybeNote = get("note","remark","รายละเอียด","หมายเหตุ");
-      if(nameCandidate && (typeof nameCandidate==="string" || typeof nameCandidate==="number")){
-        // ถ้า object มีเฉพาะข้อมูลคล้ายลูกค้า -> import เป็น customer
-        if(lowerKeys.includes("phone") || lowerKeys.includes("tel") || lowerKeys.includes("note") || lowerKeys.includes("remark") || lowerKeys.includes("มือถือ") || lowerKeys.includes("เบอร์")){
-          const nm=String(nameCandidate).trim();
-          const exists = DB.customers.find(x=>x.name===nm);
-          if(!exists){
-            DB.customers.push({id:uid(),name:nm,phone:maybePhone?String(maybePhone):"",note:maybeNote?String(maybeNote):"",createdAt:new Date().toISOString()});
-          }
-        }
-      }
-
-      // --- Product detection ---
-      // v1 อาจเก็บ products: {id,name,rmCost,price,...}
-      const prodName = get("product","productName","name","สินค้า");
-      const price = get("price","salePrice","ราคาขาย");
-      const rmCost = get("rmCost","rm","cost","ทุน","ต้นทุน","ทุนวัตถุดิบ");
-      if(prodName && (price!==undefined || rmCost!==undefined) && (lowerKeys.includes("price") || lowerKeys.includes("rmcost") || lowerKeys.includes("rm") || lowerKeys.includes("cost") || lowerKeys.includes("ทุน") || lowerKeys.includes("ต้นทุน"))){
-        ensureProductByNameMaybe(prodName, price, rmCost);
-      }
-
-      // --- Expense detection ---
-      // v1 expenses: {id,date,amount,note} หรือ {date,amount,note}
-      const amt = get("amount","amt","value","ยอด","จำนวนเงิน");
-      const expDate = get("date","วันที่");
-      const note = get("note","รายละเอียด","remark");
-      const cat = get("category","type","หมวด","รายการ");
-      if(amt!==undefined && !get("total","ยอดบิล") && (lowerKeys.includes("amount")||lowerKeys.includes("amt")||lowerKeys.includes("ยอด")||lowerKeys.includes("จำนวนเงิน"))){
-        // ถ้า object ดูเป็นรายจ่าย
-        const amount = normalizeNumber(amt);
-        if(amount>0 && (note || cat || lowerKeys.includes("note") || lowerKeys.includes("remark") || lowerKeys.includes("category") || lowerKeys.includes("type"))){
-          DB.expenses.push({
-            id:uid(),
-            date:guessDate(expDate),
-            category: (cat?String(cat):"อื่นๆ"),
-            amount,
-            note: note?String(note):""
-          });
-        }
-      }
-
-      // --- Sales detection (ใบขาย) ---
-      // v1 invoices: {id,date,total,items,customerName,status,paidAmount}
-      const total = get("total","ยอดรวม","ยอดบิล");
-      const paidAmount = get("paidAmount","paid","รับเงิน","รับชำระ");
-      const items = get("items","products","รายการ");
-      const custName2 = get("customerName","customer","ชื่อลูกค้า","ลูกค้า");
-
-      const looksLikeSale = (total!==undefined && custName2!==undefined) || (isObj(items) && total!==undefined);
-      if(looksLikeSale){
-        const t = normalizeNumber(total);
-        if(t>0){
-          const cust = ensureCustomerByName(custName2||"ลูกค้าทั่วไป");
-          // แปลง items จาก object {pid:qty} แบบ v1 หรือ array
-          let newItems=[];
-          if(isObj(items)){
-            for(const [pid,qty] of Object.entries(items)){
-              // pid อาจเป็น id เดิม (p1,p2...) → เราจะหาใน product list v1 ที่ migrate แล้ว ถ้าไม่เจอ สร้าง placeholder
-              let p = DB.products.find(x=>x.id===pid);
-              if(!p){
-                // ถ้าใน v1 pid เป็นรหัสและไม่มีชื่อ เราสร้างชื่อ placeholder
-                p = {id:pid, name:`สินค้า(${pid})`, price:0, cost:{rm:0,hidden:0,op:0,other:0}, active:true, createdAt:new Date().toISOString()};
-                // กันชน id ซ้ำ
-                if(!DB.products.find(x=>x.id===pid)) DB.products.push(p);
-              }
-              const q = normalizeNumber(qty);
-              if(q>0){
-                const priceAt = normalizeNumber(p.price);
-                const costAt = normalizeNumber(p.cost?.rm)+normalizeNumber(p.cost?.hidden)+normalizeNumber(p.cost?.op)+normalizeNumber(p.cost?.other);
-                newItems.push({productId:p.id, qty:q, priceAtSale:priceAt, costAtSale:costAt});
-              }
-            }
-          }else if(Array.isArray(items)){
-            for(const it2 of items){
-              if(!isObj(it2)) continue;
-              const nm = it2.name || it2.product || it2.productName;
-              const q = normalizeNumber(it2.qty||it2.quantity||it2.amount||1);
-              const pr = normalizeNumber(it2.price||it2.unitPrice||0);
-              const rm = normalizeNumber(it2.rmCost||it2.cost||0);
-              const p = ensureProductByNameMaybe(nm||"สินค้า", pr, rm);
-              if(p && q>0){
-                const costAt = normalizeNumber(p.cost.rm)+normalizeNumber(p.cost.hidden)+normalizeNumber(p.cost.op)+normalizeNumber(p.cost.other);
-                newItems.push({productId:p.id, qty:q, priceAtSale: pr||p.price, costAtSale: costAt});
-              }
-            }
-          }
-
-          const paid = normalizeNumber(paidAmount);
-          const status = paid>=t ? "รับครบ" : (paid>0 ? "รับบางส่วน" : "ค้างรับ");
-          DB.sales.push({
-            id:uid(),
-            date: guessDate(get("date","วันที่")),
-            customerId: cust?cust.id:null,
-            items:newItems,
-            total:t,
-            paid,
-            status
-          });
-        }
-      }
-    }
-
-    notes.push(`นำเข้าจาก ${c.key} (score=${c.score})`);
-  }
-
-  // de-dup basic: customers by name
-  DB.customers = DB.customers.filter((c,idx,arr)=>idx===arr.findIndex(x=>x.name===c.name));
-
-  const after = {
-    customers: DB.customers.length,
-    products: DB.products.length,
-    sales: DB.sales.length,
-    expenses: DB.expenses.length
-  };
-  imported.customers = after.customers - before.customers;
-  imported.products  = after.products  - before.products;
-  imported.sales     = after.sales     - before.sales;
-  imported.expenses  = after.expenses  - before.expenses;
-
-  DB.meta.migratedFromV1 = true;
-  DB.meta.migrationNotes = [
-    ...DB.meta.migrationNotes,
-    `MIGRATE@${new Date().toISOString()} customers+${imported.customers}, products+${imported.products}, sales+${imported.sales}, expenses+${imported.expenses}`,
-    ...notes.slice(0,8)
+  /***********************
+   * 0) Constants & Utils
+   ***********************/
+  const APP_KEY = "BKP_ERP_PRO_V3_DB";
+  const OLD_KEYS = [
+    "BKP_ERP_V3_DB",         // earlier assistant sample
+    "BKP_ERP_DB_PRO_V3",     // possible intermediate
+    "bkp_prods_th","bkp_costs_th","bkp_shares_th","bkp_invs_th","bkp_exps_th" // v2-style split keys
   ];
 
-  save();
-  localStorage.setItem(MIG_FLAG, "1");
-}
-
-/* ---------- 5) Core Calculations ---------- */
-function productCost(p){
-  if(!p) return 0;
-  const c = p.cost||{};
-  return normalizeNumber(c.rm)+normalizeNumber(c.hidden)+normalizeNumber(c.op)+normalizeNumber(c.other);
-}
-function saleGrossProfit(sale){
-  let gp=0;
-  for(const it of (sale.items||[])){
-    const pr = normalizeNumber(it.priceAtSale);
-    const cost = normalizeNumber(it.costAtSale);
-    gp += normalizeNumber(it.qty) * (pr - cost);
-  }
-  // ถ้าไม่มี items ให้ใช้ total เป็น revenue (profit จะใช้ expense แทนในระดับรวม)
-  return gp;
-}
-function inRange(dateISO, startISO, endISO){
-  const d = new Date(dateISO).getTime();
-  const s = new Date(startISO).getTime();
-  const e = new Date(endISO).getTime();
-  return d>=s && d<=e;
-}
-function sumSales(start,end){
-  const xs = DB.sales.filter(x=>inRange(x.date,start,end));
-  return {
-    list: xs,
-    revenue: xs.reduce((a,b)=>a+normalizeNumber(b.total),0),
-    paid: xs.reduce((a,b)=>a+normalizeNumber(b.paid),0),
-    receivable: xs.reduce((a,b)=>a+(normalizeNumber(b.total)-normalizeNumber(b.paid)),0),
-    grossProfit: xs.reduce((a,b)=>a+saleGrossProfit(b),0),
+  const todayISO = () => new Date().toISOString().split("T")[0];
+  const uid = () => (Date.now().toString(36) + Math.random().toString(36).slice(2,9)).toUpperCase();
+  const n = (x) => (Number.isFinite(+x) ? +x : 0);
+  const money = (x) => "฿" + (n(x)).toLocaleString("th-TH", {maximumFractionDigits:2});
+  const shortMoney = (x) => "฿" + (n(x)).toLocaleString("th-TH", {maximumFractionDigits:0});
+  const clamp = (x, a, b) => Math.max(a, Math.min(b, x));
+  const safeParse = (s) => { try{ return JSON.parse(s); }catch{ return null; } };
+  const isObj = (v) => v && typeof v === "object" && !Array.isArray(v);
+  const isISODate = (d) => /^\d{4}-\d{2}-\d{2}$/.test(String(d||""));
+  const inRange = (d, start, end) => {
+    const t = new Date(d).getTime();
+    const a = new Date(start).getTime();
+    const b = new Date(end).getTime();
+    return t >= a && t <= b;
   };
-}
-function sumExpenses(start,end){
-  const xs = DB.expenses.filter(x=>inRange(x.date,start,end));
-  const total = xs.reduce((a,b)=>a+normalizeNumber(b.amount),0);
-  return {list:xs,total};
-}
 
-/* ---------- 6) UI Framework (Vanilla Render) ---------- */
-const Pages = {};
-let STATE = {
-  page:"dash",
-  range:{ start: iso(new Date(new Date().getFullYear(), new Date().getMonth(), 1)), end: iso() },
-  filters:{ expenseCat:"ทั้งหมด" }
-};
-
-const NAV_ITEMS = [
-  {id:"dash", label:"แดชบอร์ด", group:"ภาพรวม"},
-  {id:"customers", label:"ลูกค้า", group:"ภาพรวม"},
-  {id:"products", label:"สินค้า & ต้นทุน", group:"ภาพรวม"},
-  {id:"sales", label:"ขาย / รับเงิน", group:"ภาพรวม"},
-  {id:"expenses", label:"ค่าใช้จ่าย / ใบเบิก", group:"ภาพรวม"},
-  {id:"reports", label:"รายงานช่วงเวลา", group:"ภาพรวม"},
-];
-
-function renderNav(){
-  const nav = $$("#nav");
-  nav.innerHTML = NAV_ITEMS.map(it=>`
-    <button class="${STATE.page===it.id?'active':''}" onclick="Actions.go('${it.id}')">
-      <span class="dot"></span><span>${it.label}</span>
-    </button>
-  `).join("");
-}
-
-function setHeader(title, subtitle){
-  $$("#title").textContent = title;
-  $$("#subtitle").textContent = subtitle;
-}
-
-function render(){
-  renderNav();
-  const root = $$("#root");
-  root.innerHTML = "";
-  const fn = Pages[STATE.page] || Pages.dash;
-  root.appendChild(fn());
-}
-
-/* ---------- 7) Actions ---------- */
-const Actions = {
-  go(p){ STATE.page=p; render(); },
-  print(){ window.print(); },
-  backupHint(){
-    alert("สำรองข้อมูลแบบเร็ว:\n\n1) เปิด Console\n2) พิมพ์: copy(localStorage)\n3) วางเก็บไว้ในไฟล์ .txt\n\nหรือใช้ปุ่ม 'ส่งออกข้อมูล (JSON)' ในเมนูซ้าย");
-  },
-  exportDB(){
-    const blob = new Blob([JSON.stringify(DB,null,2)], {type:"application/json;charset=utf-8"});
+  function downloadJSON(filename, obj){
+    const blob = new Blob([JSON.stringify(obj, null, 2)], {type:"application/json"});
     const a = document.createElement("a");
     a.href = URL.createObjectURL(blob);
-    a.download = `BKP_ERP_v3A_backup_${iso()}.json`;
+    a.download = filename;
     a.click();
-  },
-  importDB(){
-    const inp = document.createElement("input");
-    inp.type="file"; inp.accept="application/json";
-    inp.onchange = async () => {
-      const f = inp.files?.[0];
-      if(!f) return;
-      const text = await f.text();
-      const obj = safeJSON(text);
-      if(!obj || obj.meta?.schema!=="v3-A"){
-        alert("ไฟล์ไม่ถูกต้อง (ต้องเป็น backup ของ v3-A)");
-        return;
-      }
-      DB = obj;
-      save();
-      alert("นำเข้าข้อมูลสำเร็จ");
-      render();
-    };
-    inp.click();
-  },
-  addCustomer(payload){
-    const name = (payload.name||"").trim();
-    if(!name) return alert("กรุณากรอกชื่อลูกค้า");
-    if(DB.customers.find(c=>c.name===name)) return alert("มีชื่อลูกค้านี้แล้ว");
-    DB.customers.unshift({id:uid(),name,phone:(payload.phone||"").trim(),note:(payload.note||"").trim(),createdAt:new Date().toISOString()});
-    save(); render();
-  },
-  addProduct(payload){
-    const name=(payload.name||"").trim();
-    if(!name) return alert("กรุณากรอกชื่อสินค้า");
-    const price=normalizeNumber(payload.price);
-    const rm=normalizeNumber(payload.rm);
-    const hidden=normalizeNumber(payload.hidden);
-    const op=normalizeNumber(payload.op);
-    const other=normalizeNumber(payload.other);
-    DB.products.unshift({
-      id:uid(), name, price,
-      cost:{rm,hidden,op,other},
-      active:true,
-      createdAt:new Date().toISOString()
-    });
-    save(); render();
-  },
-  toggleProduct(id){
-    const p=DB.products.find(x=>x.id===id);
-    if(!p) return;
-    p.active = !p.active;
-    save(); render();
-  },
-  addSale(payload){
-    const date=payload.date||iso();
-    const customerId=payload.customerId||null;
-    if(!customerId) return alert("กรุณาเลือกลูกค้า");
-    const items=payload.items||[];
-    if(items.length<1) return alert("กรุณาเลือกสินค้าอย่างน้อย 1 รายการ");
-    let total=0;
-    const mapped=[];
-    for(const it of items){
-      const p=DB.products.find(x=>x.id===it.productId);
-      if(!p) continue;
-      const qty=normalizeNumber(it.qty);
-      if(qty<=0) continue;
-      const priceAt = normalizeNumber(it.priceAtSale ?? p.price);
-      const costAt = productCost(p);
-      mapped.push({productId:p.id, qty, priceAtSale:priceAt, costAtSale:costAt});
-      total += qty * priceAt;
+  }
+
+  function sum(arr, fn=(x)=>x){ return arr.reduce((s,x)=>s+n(fn(x)),0); }
+
+  function deepClone(o){ return JSON.parse(JSON.stringify(o)); }
+
+  /*************************************
+   * 1) Schema (v3 PRO) - robust & safe
+   *************************************/
+  const EMPTY_DB = {
+    meta:{
+      schema: 3,
+      edition: "PRO",
+      createdAt: new Date().toISOString(),
+      migratedAt: null,
+      migratedFrom: [],
+      lastOpenAt: null,
+    },
+    settings:{
+      businessName: "ครัวกลาง BKP Partnership",
+      address: "",
+      phone: "",
+      taxId: "",
+      currency: "THB"
+    },
+
+    customers: [
+      // {id, name, phone, note, active, createdAt}
+    ],
+    products: [
+      // {id, name, sku, unit, active, price, cost:{rm, hidden, op, other}, note, createdAt}
+    ],
+    sales: [
+      // {id, date, customerId, items:[{productId, qty, unit, priceAt, costAt}], total, paid, status, note, createdAt, updatedAt}
+    ],
+    purchaseOrders: [
+      // {id, date, supplierName, note, items:[{name, qty, unit, price}], total, paid, status, createdAt, updatedAt}
+    ],
+    expenses: [
+      // {id, date, category, amount, note, createdAt, updatedAt}
+    ],
+    shareholders: [
+      // {id, name, active, investedAmount, note, createdAt, updatedAt}
+    ],
+    profitPeriods: [
+      // {id, start, end, revenue, expense, profit, calculatedAt, allocations:[{id, shareholderId, percentAtCalc, amount, status, receivedAt, note}]}
+    ],
+    audit: [
+      // {id, at, type, message}
+    ]
+  };
+
+  /*************************************
+   * 2) Migration Engine (V1/V2/V3 older)
+   *************************************/
+  function writeAudit(db, type, message){
+    db.audit.unshift({id:uid(), at:new Date().toISOString(), type, message});
+    db.audit = db.audit.slice(0, 200);
+  }
+
+  function normalizeCustomerName(s){
+    return String(s||"").trim().replace(/\s+/g, " ");
+  }
+
+  function ensureCustomer(db, name){
+    const nm = normalizeCustomerName(name);
+    if(!nm) return null;
+    let c = db.customers.find(x => x.active !== false && normalizeCustomerName(x.name) === nm);
+    if(!c){
+      c = {id:uid(), name:nm, phone:"", note:"", active:true, createdAt:new Date().toISOString()};
+      db.customers.push(c);
     }
-    if(mapped.length<1 || total<=0) return alert("รายการขายไม่สมบูรณ์");
-    DB.sales.unshift({
-      id:uid(), date, customerId,
-      items:mapped,
-      total, paid:0,
-      status:"ค้างรับ"
+    return c;
+  }
+
+  function ensureProduct(db, name, priceGuess=0, rmGuess=0){
+    const nm = String(name||"").trim();
+    if(!nm) return null;
+    let p = db.products.find(x => x.active !== false && String(x.name).trim() === nm);
+    if(!p){
+      p = {
+        id:uid(),
+        name:nm,
+        sku:"",
+        unit:"กก.",
+        active:true,
+        price:n(priceGuess),
+        cost:{rm:n(rmGuess), hidden:0, op:0, other:0},
+        note:"(ย้ายเข้าจากข้อมูลเดิม)",
+        createdAt:new Date().toISOString()
+      };
+      db.products.push(p);
+    }
+    return p;
+  }
+
+  // Heuristic: scan localStorage for arrays/objects that might contain v1 data
+  function scanLocalStorageCandidates(){
+    const candidates = [];
+    for(let i=0;i<localStorage.length;i++){
+      const key = localStorage.key(i);
+      const raw = localStorage.getItem(key);
+      const parsed = safeParse(raw);
+      if(parsed == null) continue;
+      candidates.push({key, parsed});
+    }
+    return candidates;
+  }
+
+  // Import from older split keys (v2 style)
+  function importFromSplitKeys(db){
+    const prods = safeParse(localStorage.getItem("bkp_prods_th"));
+    const shares = safeParse(localStorage.getItem("bkp_shares_th"));
+    const invs = safeParse(localStorage.getItem("bkp_invs_th"));
+    const exps = safeParse(localStorage.getItem("bkp_exps_th"));
+    const costs = safeParse(localStorage.getItem("bkp_costs_th"));
+
+    let touched = false;
+
+    // Products
+    if(Array.isArray(prods) && prods.length){
+      prods.forEach(p=>{
+        const np = ensureProduct(db, p.name, p.price, p.rmCost);
+        if(np){
+          // bring richer costs if available
+          if(isObj(np.cost)){
+            np.cost.rm = n(p.rmCost ?? np.cost.rm);
+          }else{
+            np.cost = {rm:n(p.rmCost), hidden:0, op:0, other:0};
+          }
+          np.price = n(p.price ?? np.price);
+          np.note = np.note || "";
+          touched = true;
+        }
+      });
+    }
+
+    // Shareholders
+    if(Array.isArray(shares) && shares.length){
+      shares.forEach(s=>{
+        const name = String(s.name||"").trim();
+        if(!name) return;
+        let sh = db.shareholders.find(x=>x.active!==false && x.name===name);
+        if(!sh){
+          sh = {id:uid(), name, active:true, investedAmount:0, note:"(ย้ายจากข้อมูลเดิม)", createdAt:new Date().toISOString(), updatedAt:null};
+          db.shareholders.push(sh);
+          touched = true;
+        }
+        // we don't know investedAmount in v2, keep 0
+      });
+    }
+
+    // Expenses
+    if(Array.isArray(exps) && exps.length){
+      exps.forEach(e=>{
+        if(!e) return;
+        const date = isISODate(e.date) ? e.date : todayISO();
+        db.expenses.push({
+          id:uid(),
+          date,
+          category: "ค่าใช้จ่าย",
+          amount: n(e.amount),
+          note: String(e.note||"").trim(),
+          createdAt:new Date().toISOString(),
+          updatedAt:null
+        });
+        touched = true;
+      });
+    }
+
+    // Invoices (sales)
+    if(Array.isArray(invs) && invs.length){
+      invs.forEach(inv=>{
+        const date = isISODate(inv.date) ? inv.date : todayISO();
+        const cust = ensureCustomer(db, inv.customerName || inv.customer || "");
+        const items = [];
+        if(isObj(inv.items)){
+          Object.entries(inv.items).forEach(([pid, qty])=>{
+            // match by product id from v2 if possible
+            const v2p = Array.isArray(prods) ? prods.find(x=>x.id===pid) : null;
+            const prod = v2p ? ensureProduct(db, v2p.name, v2p.price, v2p.rmCost) : null;
+            if(prod){
+              const costAt = n(prod.cost.rm + prod.cost.hidden + prod.cost.op + prod.cost.other);
+              items.push({
+                productId: prod.id,
+                qty: n(qty),
+                unit: prod.unit || "กก.",
+                priceAt: n(prod.price),
+                costAt
+              });
+            }
+          });
+        }
+        const total = n(inv.total || sum(items, it=>it.qty*it.priceAt));
+        const paid = n(inv.paidAmount || 0);
+        const status = paid>=total ? "รับครบ" : (paid>0 ? "รับบางส่วน" : "ค้างรับ");
+        db.sales.push({
+          id:uid(),
+          date,
+          customerId: cust ? cust.id : null,
+          items,
+          total,
+          paid,
+          status,
+          note:"",
+          createdAt:new Date().toISOString(),
+          updatedAt:null
+        });
+        touched = true;
+      });
+    }
+
+    // Costs (op costs) -> convert into expense presets note
+    if(isObj(costs)){
+      db.settings._opCostsLegacy = costs;
+      touched = true;
+    }
+
+    return touched;
+  }
+
+  // Import from unknown v1-ish collections by heuristic fields
+  function importHeuristicV1(db){
+    const candidates = scanLocalStorageCandidates();
+    let touched = false;
+
+    function tryArray(arr){
+      if(!Array.isArray(arr) || !arr.length) return;
+      for(const item of arr){
+        if(!isObj(item)) continue;
+
+        // Customer-like
+        if(item.customerName || item.customer || (item.phone && item.name) || item.customer_id){
+          const nm = item.customerName || item.customer || item.name;
+          if(nm){
+            ensureCustomer(db, nm);
+            touched = true;
+          }
+        }
+
+        // Product-like
+        if((item.rmCost!=null && item.price!=null) || (item.cost!=null && item.price!=null && item.name)){
+          const nm = item.productName || item.product || item.name;
+          if(nm){
+            ensureProduct(db, nm, item.price, item.rmCost ?? item.cost ?? 0);
+            touched = true;
+          }
+        }
+
+        // Sale-like
+        if((item.total!=null || item.amountTotal!=null) && (item.customerName || item.customer)){
+          const date = isISODate(item.date) ? item.date : todayISO();
+          const cust = ensureCustomer(db, item.customerName || item.customer);
+          const total = n(item.total ?? item.amountTotal ?? 0);
+          const paid = n(item.paidAmount ?? item.paid ?? 0);
+          const status = paid>=total ? "รับครบ" : (paid>0 ? "รับบางส่วน" : "ค้างรับ");
+          db.sales.push({
+            id:uid(),
+            date,
+            customerId: cust ? cust.id : null,
+            items: [],
+            total,
+            paid,
+            status,
+            note: String(item.note||"").trim(),
+            createdAt:new Date().toISOString(),
+            updatedAt:null
+          });
+          touched = true;
+        }
+
+        // Expense-like
+        if(item.amount!=null && (item.note || item.category || item.desc) && item.total==null){
+          const date = isISODate(item.date) ? item.date : todayISO();
+          db.expenses.push({
+            id:uid(),
+            date,
+            category: String(item.category||"ค่าใช้จ่าย").trim(),
+            amount: n(item.amount),
+            note: String(item.note||item.desc||"").trim(),
+            createdAt:new Date().toISOString(),
+            updatedAt:null
+          });
+          touched = true;
+        }
+
+        // PO-like (supplier/total)
+        if((item.supplierName || item.supplier) && (item.total!=null || item.amount!=null) && !item.customerName){
+          const date = isISODate(item.date) ? item.date : todayISO();
+          db.purchaseOrders.push({
+            id:uid(),
+            date,
+            supplierName: String(item.supplierName||item.supplier).trim(),
+            note: String(item.note||"").trim(),
+            items: [],
+            total: n(item.total ?? item.amount ?? 0),
+            paid: n(item.paid ?? 0),
+            status: n(item.paid ?? 0) >= n(item.total ?? item.amount ?? 0) ? "จ่ายครบ" : (n(item.paid ?? 0)>0 ? "จ่ายบางส่วน" : "ค้างจ่าย"),
+            createdAt:new Date().toISOString(),
+            updatedAt:null
+          });
+          touched = true;
+        }
+      }
+    }
+
+    for(const c of candidates){
+      const p = c.parsed;
+      if(Array.isArray(p)) tryArray(p);
+      else if(isObj(p)){
+        Object.values(p).forEach(v=>{
+          if(Array.isArray(v)) tryArray(v);
+        });
+      }
+    }
+
+    return touched;
+  }
+
+  function loadDB(){
+    // 1) current key
+    const cur = safeParse(localStorage.getItem(APP_KEY));
+    if(cur && cur.meta && cur.meta.schema === 3){
+      cur.meta.lastOpenAt = new Date().toISOString();
+      localStorage.setItem(APP_KEY, JSON.stringify(cur));
+      return cur;
+    }
+
+    // 2) old keys direct import
+    for(const k of OLD_KEYS){
+      const old = safeParse(localStorage.getItem(k));
+      if(old && old.meta && old.meta.schema === 3){
+        // copy to new key
+        old.meta.lastOpenAt = new Date().toISOString();
+        old.meta.migratedAt = old.meta.migratedAt || new Date().toISOString();
+        old.meta.migratedFrom = Array.from(new Set([...(old.meta.migratedFrom||[]), k]));
+        localStorage.setItem(APP_KEY, JSON.stringify(old));
+        return old;
+      }
+    }
+
+    // 3) create new + migration
+    const db = deepClone(EMPTY_DB);
+    db.meta.migratedAt = new Date().toISOString();
+    db.meta.migratedFrom = [];
+
+    // 3.1 import from split keys if exist
+    let touched = importFromSplitKeys(db);
+    if(touched) db.meta.migratedFrom.push("v2-split-keys");
+
+    // 3.2 heuristic v1 scan
+    const touched2 = importHeuristicV1(db);
+    if(touched2) db.meta.migratedFrom.push("v1-heuristic-scan");
+
+    // Deduplicate customers/products by name
+    const custMap = new Map();
+    db.customers = db.customers.filter(c=>{
+      const key = normalizeCustomerName(c.name);
+      if(!key) return false;
+      if(custMap.has(key)) return false;
+      custMap.set(key, true);
+      return true;
     });
-    save(); render();
-  },
-  receivePayment(saleId){
-    const s=DB.sales.find(x=>x.id===saleId);
-    if(!s) return;
-    const remain = normalizeNumber(s.total)-normalizeNumber(s.paid);
-    const amtStr = prompt(`ยอดรับชำระ (ค้าง ${fmtMoney(remain)}):`);
-    if(amtStr===null) return;
-    const amt = normalizeNumber(amtStr);
-    if(amt<=0) return alert("ยอดไม่ถูกต้อง");
-    s.paid = normalizeNumber(s.paid)+amt;
-    if(s.paid>=s.total) { s.paid=s.total; s.status="รับครบ"; }
-    else s.status="รับบางส่วน";
-    save(); render();
-  },
-  addExpense(payload){
-    const date=payload.date||iso();
-    const category=(payload.category||"อื่นๆ").trim()||"อื่นๆ";
-    const amount=normalizeNumber(payload.amount);
-    const note=(payload.note||"").trim();
-    if(amount<=0) return alert("กรุณาระบุจำนวนเงิน");
-    DB.expenses.unshift({id:uid(),date,category,amount,note});
-    save(); render();
-  },
-  setRange(start,end){
-    STATE.range={start,end};
+
+    const prodMap = new Map();
+    db.products = db.products.filter(p=>{
+      const key = String(p.name||"").trim();
+      if(!key) return false;
+      if(prodMap.has(key)) return false;
+      prodMap.set(key, true);
+      // ensure cost object
+      if(!isObj(p.cost)) p.cost = {rm:0, hidden:0, op:0, other:0};
+      p.price = n(p.price);
+      p.cost.rm = n(p.cost.rm); p.cost.hidden = n(p.cost.hidden); p.cost.op = n(p.cost.op); p.cost.other = n(p.cost.other);
+      if(!p.unit) p.unit = "กก.";
+      if(p.active == null) p.active = true;
+      return true;
+    });
+
+    writeAudit(db, "MIGRATE", "สร้างฐานข้อมูล v3 PRO และนำเข้าข้อมูลเดิมโดยอัตโนมัติ");
+    localStorage.setItem(APP_KEY, JSON.stringify(db));
+    return db;
+  }
+
+  let DB = loadDB();
+
+  function saveDB(){
+    DB.meta.lastOpenAt = new Date().toISOString();
+    localStorage.setItem(APP_KEY, JSON.stringify(DB));
+  }
+
+  /*************************************
+   * 3) Business Calculations
+   *************************************/
+  function productCost(p){
+    if(!p) return 0;
+    const c = p.cost || {rm:0, hidden:0, op:0, other:0};
+    return n(c.rm) + n(c.hidden) + n(c.op) + n(c.other);
+  }
+
+  function saleRecalc(sale){
+    const total = sum(sale.items||[], it=> n(it.qty) * n(it.priceAt));
+    sale.total = n(total);
+    const paid = n(sale.paid);
+    sale.status = paid >= sale.total ? "รับครบ" : (paid>0 ? "รับบางส่วน" : "ค้างรับ");
+    sale.updatedAt = new Date().toISOString();
+  }
+
+  function poRecalc(po){
+    const total = sum(po.items||[], it=> n(it.qty) * n(it.price));
+    po.total = n(total);
+    const paid = n(po.paid);
+    po.status = paid >= po.total ? "จ่ายครบ" : (paid>0 ? "จ่ายบางส่วน" : "ค้างจ่าย");
+    po.updatedAt = new Date().toISOString();
+  }
+
+  function calcProfit(start, end){
+    const sales = DB.sales.filter(s=> isISODate(s.date) && inRange(s.date, start, end));
+    const expenses = DB.expenses.filter(e=> isISODate(e.date) && inRange(e.date, start, end));
+    const revenue = sum(sales, s=>s.total);
+    const expense = sum(expenses, e=>e.amount);
+    // Optional: COGS from sales items (if present) - can be used for margin analytics
+    const cogs = sum(sales, s=> sum(s.items||[], it=> n(it.qty)*n(it.costAt)));
+    const gross = revenue - cogs;
+    const profit = revenue - expense; // Simplified net (as your v1/v2 style)
+    return {revenue, expense, profit, cogs, gross, salesCount:sales.length, expCount:expenses.length};
+  }
+
+  function shareholderTotals(){
+    const active = DB.shareholders.filter(s=>s.active!==false);
+    const totalInvest = sum(active, s=>s.investedAmount);
+    return {active, totalInvest};
+  }
+
+  function computeSharePercents(){
+    const {active, totalInvest} = shareholderTotals();
+    const rows = active.map(s=>{
+      const pct = totalInvest>0 ? (n(s.investedAmount)/totalInvest)*100 : 0;
+      return {...s, percent: pct};
+    });
+    return {rows, totalInvest};
+  }
+
+  /*************************************
+   * 4) UI Core (render, navigation, components)
+   *************************************/
+  const root = document.getElementById("root");
+
+  const state = {
+    tab: "dashboard",
+    range: {
+      start: new Date(new Date().getFullYear(), new Date().getMonth(), 1).toISOString().split("T")[0],
+      end: todayISO()
+    },
+    modal: null, // {title, bodyHtml, onSubmit}
+    toast: null,
+    search: {
+      customer: "",
+      product: "",
+      po: "",
+      sale: "",
+      expense: "",
+      shareholder: ""
+    }
+  };
+
+  function toast(msg, type="info"){
+    state.toast = {msg, type, at: Date.now()};
+    render();
+    setTimeout(()=>{ if(state.toast && Date.now()-state.toast.at>1800){ state.toast=null; render(); } }, 1900);
+  }
+
+  function setTab(t){ state.tab = t; render(); }
+
+  function openModal(title, bodyHtml, onSubmit, submitText="บันทึก"){
+    state.modal = {title, bodyHtml, onSubmit, submitText};
     render();
   }
-};
+  function closeModal(){ state.modal=null; render(); }
 
-/* ---------- 8) Pages ---------- */
-Pages.dash = () => {
-  setHeader("แดชบอร์ด", "ภาพรวมยอดขาย-รับเงิน-ค่าใช้จ่าย (ปรับช่วงเวลาได้ที่หน้า ‘รายงานช่วงเวลา’)");
-  const start=STATE.range.start, end=STATE.range.end;
-  const s = sumSales(start,end);
-  const e = sumExpenses(start,end);
-  const net = s.revenue - e.total;
-
-  // customer behavior (top)
-  const custMap = {};
-  for(const sale of s.list){
-    const cid = sale.customerId || "unknown";
-    custMap[cid] = custMap[cid] || {revenue:0,count:0,receivable:0};
-    custMap[cid].revenue += normalizeNumber(sale.total);
-    custMap[cid].count += 1;
-    custMap[cid].receivable += (normalizeNumber(sale.total)-normalizeNumber(sale.paid));
+  function htmlesc(s){
+    return String(s??"").replace(/[&<>"']/g, (m)=>({ "&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#039;" }[m]));
   }
-  const topCustomers = Object.entries(custMap)
-    .map(([cid,v])=>{
-      const c = DB.customers.find(x=>x.id===cid);
-      return {cid, name:c?c.name:"(ไม่ระบุลูกค้า)", ...v};
-    })
-    .sort((a,b)=>b.revenue-a.revenue)
-    .slice(0,8);
 
-  const wrap = document.createElement("div");
-  wrap.className = "grid";
-  wrap.innerHTML = `
-    <div class="grid g4">
-      <div class="card hi"><div class="stat">
-        <div><div class="k">ยอดขายรวม</div><div class="v">${fmtMoney(s.revenue)}</div><div class="s">ช่วง ${start} ถึง ${end}</div></div>
-        <div class="chip">รายได้</div>
-      </div></div>
-      <div class="card"><div class="stat">
-        <div><div class="k">รับเงินแล้ว</div><div class="v">${fmtMoney(s.paid)}</div><div class="s">เข้ากระเป๋าแล้ว</div></div>
-        <div class="chip ok">Cash In</div>
-      </div></div>
-      <div class="card"><div class="stat">
-        <div><div class="k">ลูกหนี้ค้างรับ</div><div class="v">${fmtMoney(s.receivable)}</div><div class="s">รอเก็บเงิน</div></div>
-        <div class="chip wait">A/R</div>
-      </div></div>
-      <div class="card"><div class="stat">
-        <div><div class="k">กำไรสุทธิ</div><div class="v">${fmtMoney(net)}</div><div class="s">ยอดขาย - ค่าใช้จ่าย</div></div>
-        <div class="chip">NET</div>
-      </div></div>
-    </div>
+  function badge(status){
+    if(status==="รับครบ"||status==="จ่ายครบ") return `<span class="chip chip-good">✅ ${status}</span>`;
+    if(status==="ค้างรับ"||status==="ค้างจ่าย") return `<span class="chip chip-bad">⛔ ${status}</span>`;
+    return `<span class="chip chip-warn">🟠 ${status}</span>`;
+  }
 
-    <div class="card">
-      <div class="row" style="justify-content:space-between;align-items:center">
-        <div>
-          <h3 style="margin:0">พฤติกรรมลูกค้า (Top)</h3>
-          <div class="hint">ดูยอดซื้อ / จำนวนบิล / ลูกหนี้ค้างรับรายคน</div>
-        </div>
-        <div class="pillbar no-print">
-          <button class="btn ghost" onclick="Actions.go('reports')">ไปหน้า “รายงานช่วงเวลา”</button>
-        </div>
-      </div>
-      <div class="hr"></div>
-      <table>
-        <thead><tr>
-          <th>ลูกค้า</th><th class="tdr">ยอดซื้อ</th><th class="tdr">จำนวนบิล</th><th class="tdr">ค้างรับ</th>
-        </tr></thead>
-        <tbody>
-          ${
-            topCustomers.length? topCustomers.map(x=>`
-              <tr>
-                <td><b>${x.name}</b></td>
-                <td class="tdr">${fmtMoney(x.revenue)}</td>
-                <td class="tdr">${fmtInt(x.count)}</td>
-                <td class="tdr">${fmtMoney(x.receivable)}</td>
-              </tr>
-            `).join("") : `<tr><td colspan="4" class="muted">ยังไม่มีข้อมูลในช่วงเวลานี้</td></tr>`
-          }
-        </tbody>
-      </table>
-    </div>
-
-    <div class="card">
-      <h3 style="margin:0">สถานะการย้ายข้อมูล</h3>
-      <div class="hr"></div>
-      <div class="${DB.meta.migratedFromV1?'okbox':'warnbox'}">
-        ${DB.meta.migratedFromV1
-          ? "✅ ระบบได้พยายามดึงข้อมูลจากเวอร์ชัน 1 แล้ว (อ่านอย่างเดียว ไม่ลบข้อมูลเดิม)"
-          : "⚠️ ยังไม่พบข้อมูลเวอร์ชัน 1 หรือยังไม่ได้ migrate (ถ้าคุณมีข้อมูลเดิมจริง ให้ลองเปิดด้วยเบราว์เซอร์เดิมที่เคยใช้)"
-        }
-      </div>
-      <div class="hint" style="margin-top:10px">
-        บันทึก: <br>
-        ${ (DB.meta.migrationNotes||[]).slice(-6).map(n=>`• ${n}`).join("<br>") || "—" }
-      </div>
-    </div>
-  `;
-  return wrap;
-};
-
-Pages.customers = () => {
-  setHeader("ลูกค้า", "เพิ่มลูกค้า / เก็บฐานชื่อไว้เลือกในใบขาย");
-  const wrap=document.createElement("div");
-  wrap.className="grid";
-  wrap.innerHTML=`
-    <div class="card">
-      <h3 style="margin:0">เพิ่มลูกค้าใหม่</h3>
-      <div class="hr"></div>
-      <div class="grid g3">
-        <div><label>ชื่อลูกค้า</label><input id="c_name" placeholder="เช่น ร้าน A / คุณ B"></div>
-        <div><label>เบอร์โทร (ถ้ามี)</label><input id="c_phone" placeholder="0xx-xxx-xxxx"></div>
-        <div><label>หมายเหตุ</label><input id="c_note" placeholder="เงื่อนไขเครดิต/วันวางบิล"></div>
-      </div>
-      <div style="height:10px"></div>
-      <button class="btn pri" onclick="Actions.addCustomer({name:$$('#c_name').value,phone:$$('#c_phone').value,note:$$('#c_note').value})">บันทึก</button>
-    </div>
-
-    <div class="card">
-      <div class="row" style="justify-content:space-between;align-items:center">
-        <div>
-          <h3 style="margin:0">รายชื่อลูกค้า</h3>
-          <div class="hint">รวมทั้งลูกค้าที่ migrate มาจากเวอร์ชัน 1</div>
-        </div>
-        <div class="chip">${fmtInt(DB.customers.length)} ราย</div>
-      </div>
-      <div class="hr"></div>
-      <table>
-        <thead><tr><th>ลูกค้า</th><th>โทร</th><th>หมายเหตุ</th></tr></thead>
-        <tbody>
-          ${
-            DB.customers.length? DB.customers.map(c=>`
-              <tr>
-                <td><b>${c.name}</b></td>
-                <td>${c.phone||""}</td>
-                <td class="muted">${c.note||""}</td>
-              </tr>
-            `).join("") : `<tr><td colspan="3" class="muted">ยังไม่มีลูกค้า</td></tr>`
-          }
-        </tbody>
-      </table>
-    </div>
-  `;
-  return wrap;
-};
-
-Pages.products = () => {
-  setHeader("สินค้า & โครงสร้างต้นทุน", "ปรับทุนหลายชั้น + คำนวณกำไรต่อหน่วย");
-  const wrap=document.createElement("div");
-  wrap.className="grid";
-  wrap.innerHTML=`
-    <div class="card">
-      <h3 style="margin:0">เพิ่มสินค้า</h3>
-      <div class="hr"></div>
-      <div class="grid g3">
-        <div><label>ชื่อสินค้า</label><input id="p_name" placeholder="เช่น น้ำยำปลาร้า"></div>
-        <div><label>ราคาขาย/หน่วย</label><input id="p_price" type="number" placeholder="0"></div>
-        <div></div>
-        <div><label>ทุนวัตถุดิบ (RM)</label><input id="p_rm" type="number" placeholder="0"></div>
-        <div><label>ทุนแฝง</label><input id="p_hidden" type="number" placeholder="0"></div>
-        <div><label>ทุนดำเนินการ</label><input id="p_op" type="number" placeholder="0"></div>
-        <div><label>ทุนอื่น ๆ</label><input id="p_other" type="number" placeholder="0"></div>
-      </div>
-      <div style="height:10px"></div>
-      <button class="btn pri" onclick="Actions.addProduct({
-        name:$$('#p_name').value, price:$$('#p_price').value, rm:$$('#p_rm').value,
-        hidden:$$('#p_hidden').value, op:$$('#p_op').value, other:$$('#p_other').value
-      })">บันทึกสินค้า</button>
-      <div class="hint" style="margin-top:10px">* สินค้าที่ migrate มาจาก v1 อาจมีทุน/ราคาไม่ครบ คุณสามารถปรับได้ที่นี่</div>
-    </div>
-
-    <div class="card">
-      <div class="row" style="justify-content:space-between;align-items:center">
-        <div>
-          <h3 style="margin:0">รายการสินค้า</h3>
-          <div class="hint">คำนวณ ต้นทุนรวม = RM + แฝง + ดำเนินการ + อื่น ๆ</div>
-        </div>
-        <div class="chip">${fmtInt(DB.products.length)} รายการ</div>
-      </div>
-      <div class="hr"></div>
-      <table>
-        <thead>
-          <tr>
-            <th>สินค้า</th><th class="tdr">ราคา</th><th class="tdr">ต้นทุนรวม</th><th class="tdr">กำไร/หน่วย</th><th class="tdr">สถานะ</th>
-          </tr>
-        </thead>
-        <tbody>
-          ${
-            DB.products.length ? DB.products.map(p=>{
-              const cost=productCost(p);
-              const gp=normalizeNumber(p.price)-cost;
-              return `
-                <tr>
-                  <td><b>${p.name}</b></td>
-                  <td class="tdr">${fmtMoney(p.price)}</td>
-                  <td class="tdr">${fmtMoney(cost)}</td>
-                  <td class="tdr"><b>${fmtMoney(gp)}</b></td>
-                  <td class="tdr">
-                    <button class="btn ${p.active?'ok':'danger'}" onclick="Actions.toggleProduct('${p.id}')">${p.active?'ใช้งาน':'ปิดใช้งาน'}</button>
-                  </td>
-                </tr>
-              `;
-            }).join("")
-            : `<tr><td colspan="5" class="muted">ยังไม่มีสินค้า</td></tr>`
-          }
-        </tbody>
-      </table>
-    </div>
-  `;
-  return wrap;
-};
-
-Pages.sales = () => {
-  setHeader("ขาย / รับเงิน", "ออกบิลขาย (แบบง่าย) + รับชำระ + ติดตามลูกหนี้");
-  const activeProducts = DB.products.filter(p=>p.active);
-  const wrap=document.createElement("div");
-  wrap.className="grid";
-
-  const customerOptions = DB.customers.map(c=>`<option value="${c.id}">${c.name}</option>`).join("");
-  const productRows = activeProducts.map(p=>`
-    <tr>
-      <td><b>${p.name}</b><div class="muted" style="font-size:12px">ราคา: ${fmtMoney(p.price)} | ทุน: ${fmtMoney(productCost(p))}</div></td>
-      <td style="width:140px">
-        <input type="number" min="0" step="0.01" data-pid="${p.id}" class="saleqty" placeholder="0">
-      </td>
-      <td style="width:160px">
-        <input type="number" min="0" step="0.01" data-ppid="${p.id}" class="saleprice" placeholder="${p.price}">
-      </td>
-    </tr>
-  `).join("");
-
-  const rows = DB.sales.slice(0,60).map(s=>{
-    const c = DB.customers.find(x=>x.id===s.customerId);
-    const remain = normalizeNumber(s.total)-normalizeNumber(s.paid);
-    const chip = s.status==="รับครบ" ? "ok" : "wait";
+  function kpi(label, value, sub, accent="pri"){
+    const ring = accent==="good" ? "rgba(34,197,94,.35)" : accent==="bad" ? "rgba(239,68,68,.35)" : "rgba(59,130,246,.35)";
+    const glow = accent==="good" ? "rgba(34,197,94,.20)" : accent==="bad" ? "rgba(239,68,68,.20)" : "rgba(59,130,246,.20)";
     return `
-      <tr>
-        <td>${s.date}</td>
-        <td><b>${c?c.name:"(ไม่ระบุลูกค้า)"}</b></td>
-        <td class="tdr">${fmtMoney(s.total)}</td>
-        <td class="tdr">${fmtMoney(s.paid)}</td>
-        <td class="tdr">${fmtMoney(remain)}</td>
-        <td class="tdr"><span class="chip ${chip}">${s.status}</span></td>
-        <td class="tdr">
-          ${s.status!=="รับครบ" ? `<button class="btn ok" onclick="Actions.receivePayment('${s.id}')">รับเงิน</button>` : `<span class="muted">—</span>`}
-        </td>
-      </tr>
+      <div class="kpi soft-shadow" style="border-color:${ring}; box-shadow: 0 20px 70px rgba(0,0,0,.25), 0 0 0 1px ${glow} inset;">
+        <div class="label">${htmlesc(label)}</div>
+        <div class="value mono mt-2">${htmlesc(value)}</div>
+        <div class="sub mt-1">${htmlesc(sub||"")}</div>
+      </div>
     `;
-  }).join("");
-
-  wrap.innerHTML=`
-    <div class="card">
-      <h3 style="margin:0">ออกบิลขายใหม่</h3>
-      <div class="hr"></div>
-      <div class="grid g3">
-        <div><label>วันที่</label><input id="s_date" type="date" value="${iso()}"></div>
-        <div><label>ลูกค้า</label><select id="s_cust"><option value="">— เลือกลูกค้า —</option>${customerOptions}</select></div>
-        <div class="hint">* ระบบจะดึงลูกค้าเดิม (จาก v1) มาให้เลือก</div>
-      </div>
-      <div style="height:10px"></div>
-      <table>
-        <thead><tr><th>สินค้า</th><th>จำนวน</th><th>ราคา/หน่วย (แก้ได้)</th></tr></thead>
-        <tbody>
-          ${activeProducts.length?productRows:`<tr><td colspan="3" class="muted">ยังไม่มีสินค้า (หรือถูกปิดใช้งาน)</td></tr>`}
-        </tbody>
-      </table>
-      <div style="height:10px"></div>
-      <button class="btn pri" onclick="(function(){
-        const items=[];
-        document.querySelectorAll('.saleqty').forEach(inp=>{
-          const qty=Number(inp.value)||0;
-          if(qty>0){
-            const pid=inp.getAttribute('data-pid');
-            const pinp=document.querySelector('.saleprice[data-ppid=\"'+pid+'\"]');
-            const priceAt=Number(pinp?.value)||0;
-            items.push({productId:pid,qty:qty,priceAtSale:priceAt});
-          }
-        });
-        Actions.addSale({date:document.getElementById('s_date').value, customerId:document.getElementById('s_cust').value, items});
-      })()">บันทึกบิล</button>
-    </div>
-
-    <div class="card">
-      <div class="row" style="justify-content:space-between;align-items:center">
-        <div>
-          <h3 style="margin:0">ประวัติขาย / ลูกหนี้</h3>
-          <div class="hint">แสดงล่าสุด 60 รายการ (พิมพ์/ทำ PDF ได้จากปุ่มบนสุด)</div>
-        </div>
-        <div class="chip">ทั้งหมด ${fmtInt(DB.sales.length)} บิล</div>
-      </div>
-      <div class="hr"></div>
-      <table>
-        <thead>
-          <tr><th>วันที่</th><th>ลูกค้า</th><th class="tdr">ยอดบิล</th><th class="tdr">รับแล้ว</th><th class="tdr">ค้างรับ</th><th class="tdr">สถานะ</th><th class="tdr">จัดการ</th></tr>
-        </thead>
-        <tbody>${DB.sales.length?rows:`<tr><td colspan="7" class="muted">ยังไม่มีบิล</td></tr>`}</tbody>
-      </table>
-    </div>
-  `;
-  return wrap;
-};
-
-Pages.expenses = () => {
-  setHeader("ค่าใช้จ่าย / ใบเบิก", "บันทึกรายจ่ายเป็นหมวด + ใช้ทำใบเบิกและรายงานช่วงเวลา");
-  const cats = ["ทั้งหมด", ...DB.settings.expenseCategories];
-  const wrap=document.createElement("div");
-  wrap.className="grid";
-
-  const catPills = cats.map(c=>`<div class="pill ${STATE.filters.expenseCat===c?'active':''}" onclick="(function(){STATE.filters.expenseCat='${c}';render();})()">${c}</div>`).join("");
-  const list = (STATE.filters.expenseCat==="ทั้งหมด")
-    ? DB.expenses
-    : DB.expenses.filter(x=>x.category===STATE.filters.expenseCat);
-
-  const rows = list.slice(0,80).map(e=>`
-    <tr><td>${e.date}</td><td><b>${e.category}</b></td><td class="tdr">${fmtMoney(e.amount)}</td><td class="muted">${e.note||""}</td></tr>
-  `).join("");
-
-  wrap.innerHTML=`
-    <div class="card">
-      <h3 style="margin:0">บันทึกรายจ่ายใหม่</h3>
-      <div class="hr"></div>
-      <div class="grid g3">
-        <div><label>วันที่</label><input id="e_date" type="date" value="${iso()}"></div>
-        <div><label>หมวด</label>
-          <select id="e_cat">${DB.settings.expenseCategories.map(c=>`<option value="${c}">${c}</option>`).join("")}</select>
-        </div>
-        <div><label>จำนวนเงิน</label><input id="e_amt" type="number" placeholder="0"></div>
-      </div>
-      <div style="height:8px"></div>
-      <div><label>รายละเอียด</label><textarea id="e_note" placeholder="เช่น ค่าไฟเดือน ม.ค., ค่าทำบัญชี, ค่าแรงผลิต"></textarea></div>
-      <div style="height:10px"></div>
-      <button class="btn pri" onclick="Actions.addExpense({
-        date:$$('#e_date').value, category:$$('#e_cat').value, amount:$$('#e_amt').value, note:$$('#e_note').value
-      })">บันทึกค่าใช้จ่าย</button>
-      <div class="hint" style="margin-top:10px">
-        * การพิมพ์ใบเบิก/รายงานตามช่วงเวลา → ไปที่หน้า “รายงานช่วงเวลา” แล้วเลือกหมวด + กดพิมพ์/PDF
-      </div>
-    </div>
-
-    <div class="card">
-      <div class="row" style="justify-content:space-between;align-items:center">
-        <div>
-          <h3 style="margin:0">รายการค่าใช้จ่าย</h3>
-          <div class="hint">ใช้ตัวกรองหมวดเพื่อทำใบเบิกเฉพาะหมวดได้</div>
-        </div>
-        <div class="chip">ทั้งหมด ${fmtInt(DB.expenses.length)} รายการ</div>
-      </div>
-      <div class="hr"></div>
-      <div class="pillbar no-print">${catPills}</div>
-      <div style="height:10px"></div>
-      <table>
-        <thead><tr><th>วันที่</th><th>หมวด</th><th class="tdr">จำนวน</th><th>รายละเอียด</th></tr></thead>
-        <tbody>${list.length?rows:`<tr><td colspan="4" class="muted">ยังไม่มีข้อมูล</td></tr>`}</tbody>
-      </table>
-    </div>
-  `;
-  return wrap;
-};
-
-Pages.reports = () => {
-  setHeader("รายงานช่วงเวลา", "เลือกช่วงเวลา → สรุปยอดขาย/ลูกหนี้/ค่าใช้จ่าย/กำไร และพิมพ์เป็น PDF");
-  const wrap=document.createElement("div");
-  wrap.className="grid";
-
-  const start = STATE.range.start;
-  const end = STATE.range.end;
-  const s = sumSales(start,end);
-  const e = sumExpenses(start,end);
-  const net = s.revenue - e.total;
-
-  // breakdown by expense category within range
-  const expMap={};
-  for(const x of e.list){
-    expMap[x.category]= (expMap[x.category]||0)+normalizeNumber(x.amount);
   }
-  const expRows = Object.entries(expMap).sort((a,b)=>b[1]-a[1]).map(([cat,val])=>`
-    <tr><td><b>${cat}</b></td><td class="tdr">${fmtMoney(val)}</td></tr>
-  `).join("");
 
-  // top customers within range
-  const custMap={};
-  for(const sale of s.list){
-    const cid=sale.customerId||"unknown";
-    custMap[cid]=custMap[cid]||{revenue:0,paid:0,receivable:0,count:0};
-    custMap[cid].revenue += normalizeNumber(sale.total);
-    custMap[cid].paid += normalizeNumber(sale.paid);
-    custMap[cid].receivable += (normalizeNumber(sale.total)-normalizeNumber(sale.paid));
-    custMap[cid].count += 1;
+  function pageHeader(title, subtitle, actionsHtml=""){
+    return `
+      <div class="flex flex-col md:flex-row md:items-end md:justify-between gap-3">
+        <div class="pl-4 border-l-4" style="border-color: rgba(96,165,250,.75);">
+          <div class="text-2xl md:text-3xl font-black">${htmlesc(title)}</div>
+          <div class="muted text-sm font-bold mt-1">${htmlesc(subtitle||"")}</div>
+        </div>
+        <div class="flex gap-2 flex-wrap no-print">${actionsHtml||""}</div>
+      </div>
+    `;
   }
-  const custRows = Object.entries(custMap).map(([cid,v])=>{
-    const c=DB.customers.find(x=>x.id===cid);
-    return {name:c?c.name:"(ไม่ระบุลูกค้า)",...v};
-  }).sort((a,b)=>b.revenue-a.revenue).slice(0,12)
-    .map(x=>`
-      <tr>
-        <td><b>${x.name}</b></td>
-        <td class="tdr">${fmtMoney(x.revenue)}</td>
-        <td class="tdr">${fmtMoney(x.paid)}</td>
-        <td class="tdr">${fmtMoney(x.receivable)}</td>
-        <td class="tdr">${fmtInt(x.count)}</td>
-      </tr>
+
+  function topBar(){
+    const {start,end} = state.range;
+    return `
+      <div class="glass2 rounded-2xl p-4 md:p-5 soft-shadow">
+        <div class="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-3">
+          <div class="flex items-center gap-3">
+            <div class="w-11 h-11 rounded-2xl flex items-center justify-center font-black"
+                 style="background:linear-gradient(135deg, rgba(59,130,246,.35), rgba(168,85,247,.22)); border:1px solid rgba(96,165,250,.35);">
+              BKP
+            </div>
+            <div>
+              <div class="text-lg font-black">BKP ERP v3 PRO</div>
+              <div class="text-xs font-bold muted2">Premium · Single File · Auto-Migration · Print-to-PDF</div>
+            </div>
+          </div>
+
+          <div class="flex flex-wrap gap-2 items-end no-print">
+            <div>
+              <div class="text-[11px] font-black muted2 mb-1">ช่วงรายงาน</div>
+              <div class="flex gap-2">
+                <input class="input" style="width:180px" type="date" id="rng-start" value="${htmlesc(start)}">
+                <input class="input" style="width:180px" type="date" id="rng-end" value="${htmlesc(end)}">
+              </div>
+            </div>
+            <button class="btn btn-dark" onclick="applyRange()">อัปเดตช่วง</button>
+            <button class="btn btn-dark" onclick="backupData()">สำรองข้อมูล</button>
+            <button class="btn btn-primary" onclick="printCurrent()">พิมพ์หน้านี้ (PDF)</button>
+          </div>
+        </div>
+      </div>
+    `;
+  }
+
+  function sidebar(){
+    const items = [
+      {id:"dashboard", label:"แดชบอร์ด", icon:"📊"},
+      {id:"sales", label:"ขาย / ใบเสร็จ", icon:"🧾"},
+      {id:"po", label:"ใบสั่งซื้อ (PO)", icon:"📑"},
+      {id:"expenses", label:"ค่าใช้จ่าย / ใบเบิก", icon:"💸"},
+      {id:"customers", label:"ลูกค้า", icon:"👥"},
+      {id:"products", label:"สินค้า & ต้นทุน", icon:"📦"},
+      {id:"shareholders", label:"ผู้ถือหุ้น & กำไร", icon:"🤝"},
+      {id:"reports", label:"รายงานรวม", icon:"📈"},
+      {id:"settings", label:"ตั้งค่า", icon:"⚙️"},
+    ];
+    const rows = items.map(it=>{
+      const active = it.id===state.tab ? "active" : "";
+      return `<button class="sidebar-item ${active}" onclick="setTab('${it.id}')">
+        <span class="text-xl">${it.icon}</span>
+        <span class="text-sm">${htmlesc(it.label)}</span>
+      </button>`;
+    }).join("");
+
+    return `
+      <div class="glass rounded-3xl p-4 md:p-5 soft-shadow h-full">
+        <div class="flex items-center justify-between mb-4">
+          <div>
+            <div class="text-sm font-black muted2 uppercase tracking-widest">เมนูระบบ</div>
+            <div class="text-lg font-black mt-1">${htmlesc(DB.settings.businessName || "ครัวกลาง BKP")}</div>
+          </div>
+          <div class="chip">🗂️ <span class="mono">${DB.meta.schema}</span></div>
+        </div>
+        <div class="space-y-1 overflow-y-auto no-scrollbar" style="max-height: calc(100vh - 210px);">
+          ${rows}
+        </div>
+        <div class="mt-4 pt-4 border-t" style="border-color:rgba(255,255,255,.10)">
+          <div class="text-xs font-bold muted2">สถานะข้อมูล</div>
+          <div class="text-xs font-black mt-2">
+            <div>ลูกค้า: <span class="mono">${DB.customers.filter(x=>x.active!==false).length}</span></div>
+            <div>สินค้า: <span class="mono">${DB.products.filter(x=>x.active!==false).length}</span></div>
+            <div>บิลขาย: <span class="mono">${DB.sales.length}</span></div>
+            <div>PO: <span class="mono">${DB.purchaseOrders.length}</span></div>
+          </div>
+          <div class="text-[11px] muted2 font-bold mt-3">
+            ย้ายข้อมูล: <span class="mono">${(DB.meta.migratedFrom||[]).join(", ") || "—"}</span>
+          </div>
+        </div>
+      </div>
+    `;
+  }
+
+  function layout(content){
+    const toastHtml = state.toast ? `
+      <div class="fixed bottom-5 right-5 z-50">
+        <div class="glass2 rounded-2xl px-4 py-3 soft-shadow">
+          <div class="text-sm font-black">${htmlesc(state.toast.msg)}</div>
+        </div>
+      </div>` : "";
+
+    const modalHtml = state.modal ? `
+      <div class="modal-backdrop no-print" onclick="if(event.target===this) closeModal()">
+        <div class="modal glass2 soft-shadow p-5 md:p-6">
+          <div class="flex items-start justify-between gap-4">
+            <div>
+              <div class="text-xl font-black">${htmlesc(state.modal.title)}</div>
+              <div class="text-xs font-bold muted2 mt-1">กรอกข้อมูลให้ครบ แล้วกด “${htmlesc(state.modal.submitText)}”</div>
+            </div>
+            <button class="btn btn-dark" onclick="closeModal()">ปิด</button>
+          </div>
+          <div class="mt-4">${state.modal.bodyHtml}</div>
+          <div class="mt-5 flex gap-2 justify-end">
+            <button class="btn btn-dark" onclick="closeModal()">ยกเลิก</button>
+            <button class="btn btn-primary" onclick="submitModal()">${htmlesc(state.modal.submitText)}</button>
+          </div>
+        </div>
+      </div>` : "";
+
+    return `
+      <div class="p-4 md:p-6">
+        <div class="max-w-[1400px] mx-auto">
+          ${topBar()}
+          <div class="mt-4 grid grid-cols-1 lg:grid-cols-[360px_1fr] gap-4">
+            <div class="no-print">${sidebar()}</div>
+            <div>${content}</div>
+          </div>
+        </div>
+      </div>
+      ${toastHtml}
+      ${modalHtml}
+    `;
+  }
+
+  function submitModal(){
+    if(!state.modal || typeof state.modal.onSubmit!=="function") return;
+    try{
+      state.modal.onSubmit();
+      closeModal();
+    }catch(err){
+      console.error(err);
+      toast("เกิดข้อผิดพลาด: " + (err?.message||"ไม่ทราบสาเหตุ"));
+    }
+  }
+
+  /*************************************
+   * 5) Pages
+   *************************************/
+  function pageDashboard(){
+    const {start,end} = state.range;
+    const p = calcProfit(start, end);
+
+    const receivable = sum(DB.sales.filter(s=>isISODate(s.date) && inRange(s.date,start,end)), s=> Math.max(0, n(s.total)-n(s.paid)));
+    const payablePO = sum(DB.purchaseOrders.filter(po=>isISODate(po.date) && inRange(po.date,start,end)), po=> Math.max(0, n(po.total)-n(po.paid)));
+
+    // Customer behavior
+    const custAgg = new Map();
+    for(const s of DB.sales){
+      if(!isISODate(s.date) || !inRange(s.date,start,end)) continue;
+      const id = s.customerId || "UNKNOWN";
+      if(!custAgg.has(id)) custAgg.set(id, {id, rev:0, bills:0, due:0, last:s.date});
+      const row = custAgg.get(id);
+      row.rev += n(s.total);
+      row.bills += 1;
+      row.due += Math.max(0, n(s.total)-n(s.paid));
+      if(new Date(s.date) > new Date(row.last)) row.last = s.date;
+    }
+    const topCustomers = Array.from(custAgg.values())
+      .sort((a,b)=>b.rev-a.rev).slice(0,6)
+      .map(r=>{
+        const c = DB.customers.find(x=>x.id===r.id);
+        const name = c ? c.name : "(ไม่ระบุลูกค้า)";
+        return `<tr>
+          <td class="font-black">${htmlesc(name)}</td>
+          <td class="mono font-black">${money(r.rev)}</td>
+          <td class="mono">${r.bills}</td>
+          <td>${r.due>0 ? `<span class="chip chip-bad">ค้าง ${money(r.due)}</span>` : `<span class="chip chip-good">ไม่มีค้าง</span>`}</td>
+          <td class="mono muted2 font-black">${htmlesc(r.last)}</td>
+        </tr>`;
+      }).join("") || `<tr><td colspan="5" class="muted font-bold">ยังไม่มีข้อมูลในช่วงนี้</td></tr>`;
+
+    // Low margin products (based on current structure)
+    const lowMargin = DB.products.filter(p=>p.active!==false).map(p=>{
+      const cost = productCost(p);
+      const margin = p.price>0 ? ((p.price-cost)/p.price)*100 : 0;
+      return {id:p.id, name:p.name, margin, profitPer:(p.price-cost), price:p.price, cost};
+    }).sort((a,b)=>a.margin-b.margin).slice(0,6);
+
+    const lowRows = lowMargin.map(x=>{
+      const low = x.margin < 15;
+      return `<tr>
+        <td class="font-black">${htmlesc(x.name)}</td>
+        <td class="mono font-black">${money(x.price)}</td>
+        <td class="mono">${money(x.cost)}</td>
+        <td>${low ? `<span class="chip chip-bad">ต่ำ ${x.margin.toFixed(1)}%</span>` : `<span class="chip chip-good">${x.margin.toFixed(1)}%</span>`}</td>
+      </tr>`;
+    }).join("") || `<tr><td colspan="4" class="muted font-bold">ยังไม่มีสินค้า</td></tr>`;
+
+    const content = `
+      <div class="glass rounded-3xl p-5 md:p-7 soft-shadow">
+        ${pageHeader("แดชบอร์ดผู้บริหาร", "ภาพรวมรายได้–ค่าใช้จ่าย–ลูกหนี้–พฤติกรรมลูกค้า (ตามช่วงวันที่ที่เลือก)",
+          `<button class="btn btn-dark" onclick="openQuickSale()">+ ออกบิล</button>
+           <button class="btn btn-dark" onclick="openQuickPO()">+ ทำ PO</button>
+           <button class="btn btn-dark" onclick="openQuickExpense()">+ บันทึกค่าใช้จ่าย</button>`
+        )}
+        <div class="mt-6 grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-4">
+          ${kpi("ยอดขายรวม", shortMoney(p.revenue), "รวมบิลขายในช่วง", "pri")}
+          ${kpi("ค่าใช้จ่ายรวม", shortMoney(p.expense), "รวมรายการค่าใช้จ่ายในช่วง", "warn")}
+          ${kpi("ลูกหนี้ค้างรับ", shortMoney(receivable), "รวมยอดค้างรับจากบิล", receivable>0?"bad":"good")}
+          ${kpi("PO ค้างจ่าย", shortMoney(payablePO), "รวมยอดค้างจ่ายจาก PO", payablePO>0?"warn":"good")}
+        </div>
+
+        <div class="mt-6 grid grid-cols-1 xl:grid-cols-2 gap-4">
+          <div class="glass2 rounded-3xl p-5">
+            <div class="flex items-end justify-between gap-3">
+              <div>
+                <div class="text-lg font-black">Top ลูกค้าในช่วง</div>
+                <div class="text-xs font-bold muted2">ยอดซื้อ · จำนวนบิล · ค้างรับ · ซื้อครั้งล่าสุด</div>
+              </div>
+              <button class="btn btn-dark" onclick="setTab('customers')">ไปหน้าลูกค้า</button>
+            </div>
+            <div class="mt-4 overflow-x-auto">
+              <table class="table">
+                <thead><tr><th>ลูกค้า</th><th>ยอดซื้อ</th><th>บิล</th><th>สถานะ</th><th>ล่าสุด</th></tr></thead>
+                <tbody>${topCustomers}</tbody>
+              </table>
+            </div>
+          </div>
+
+          <div class="glass2 rounded-3xl p-5">
+            <div class="flex items-end justify-between gap-3">
+              <div>
+                <div class="text-lg font-black">Margin Watchdog</div>
+                <div class="text-xs font-bold muted2">ตรวจสินค้ากำไรต่ำ (ตามต้นทุน/ราคาปัจจุบัน)</div>
+              </div>
+              <button class="btn btn-dark" onclick="setTab('products')">ไปหน้าสินค้า</button>
+            </div>
+            <div class="mt-4 overflow-x-auto">
+              <table class="table">
+                <thead><tr><th>สินค้า</th><th>ราคา</th><th>ต้นทุนรวม</th><th>Margin</th></tr></thead>
+                <tbody>${lowRows}</tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+
+        <div class="mt-6 glass2 rounded-3xl p-5">
+          <div class="flex items-end justify-between gap-3">
+            <div>
+              <div class="text-lg font-black">สรุปกำไร (แบบใช้งานจริง)</div>
+              <div class="text-xs font-bold muted2">กำไรสุทธิ (รายได้ - ค่าใช้จ่าย) ตามข้อมูลที่บันทึก</div>
+            </div>
+            <div class="text-right">
+              <div class="text-xs font-black muted2">กำไรสุทธิ</div>
+              <div class="text-3xl font-black mono">${money(p.profit)}</div>
+            </div>
+          </div>
+          <div class="mt-3 text-xs font-bold muted2">
+            * หมายเหตุ: ระบบรองรับ “ต้นทุนสินค้า (COGS)” จากรายการในบิล หากมีการบันทึกเป็นรายการสินค้าในบิล (จะใช้ในรายงานขั้นสูง)
+          </div>
+        </div>
+      </div>
+    `;
+    return content;
+  }
+
+  /********** Customers **********/
+  function pageCustomers(){
+    const q = state.search.customer.trim().toLowerCase();
+    const rows = DB.customers
+      .filter(c=>c.active!==false)
+      .filter(c=> !q || (c.name||"").toLowerCase().includes(q) || (c.phone||"").toLowerCase().includes(q))
+      .sort((a,b)=>(a.name||"").localeCompare(b.name||""))
+      .map(c=>{
+        const bills = DB.sales.filter(s=>s.customerId===c.id);
+        const rev = sum(bills, s=>s.total);
+        const due = sum(bills, s=>Math.max(0, n(s.total)-n(s.paid)));
+        return `<tr>
+          <td>
+            <div class="font-black">${htmlesc(c.name)}</div>
+            <div class="text-xs font-bold muted2">${htmlesc(c.phone||"—")} · ${htmlesc(c.note||"")}</div>
+          </td>
+          <td class="mono font-black">${money(rev)}</td>
+          <td class="mono">${bills.length}</td>
+          <td>${due>0 ? `<span class="chip chip-bad">ค้าง ${money(due)}</span>` : `<span class="chip chip-good">ปกติ</span>`}</td>
+          <td class="no-print">
+            <div class="flex gap-2 flex-wrap">
+              <button class="btn btn-dark" onclick="editCustomer('${c.id}')">แก้ไข</button>
+              <button class="btn btn-danger" onclick="deactivateCustomer('${c.id}')">ลบ/ปิด</button>
+            </div>
+          </td>
+        </tr>`;
+      }).join("") || `<tr><td colspan="5" class="muted font-bold">ไม่พบข้อมูลลูกค้า</td></tr>`;
+
+    const content = `
+      <div class="glass rounded-3xl p-5 md:p-7 soft-shadow">
+        ${pageHeader("จัดการลูกค้า", "เพิ่ม/แก้ไข/ปิดการใช้งานลูกค้า · ดูยอดซื้อและลูกหนี้",
+          `<button class="btn btn-primary" onclick="addCustomer()">+ เพิ่มลูกค้า</button>
+           <button class="btn btn-dark" onclick="exportCustomers()">ส่งออกลูกค้า (JSON)</button>`
+        )}
+        <div class="mt-5 grid grid-cols-1 md:grid-cols-3 gap-3 no-print">
+          <div class="md:col-span-2">
+            <div class="text-xs font-black muted2 mb-2">ค้นหา (ชื่อ/เบอร์)</div>
+            <input class="input" placeholder="พิมพ์เพื่อค้นหา..." value="${htmlesc(state.search.customer)}"
+              oninput="state.search.customer=this.value; render()">
+          </div>
+          <div class="">
+            <div class="text-xs font-black muted2 mb-2">รวมลูกค้า (Active)</div>
+            <div class="glass2 rounded-2xl p-4 font-black mono">${DB.customers.filter(x=>x.active!==false).length}</div>
+          </div>
+        </div>
+
+        <div class="mt-5 overflow-x-auto">
+          <table class="table">
+            <thead><tr>
+              <th>ลูกค้า</th><th>ยอดซื้อสะสม</th><th>จำนวนบิล</th><th>สถานะ</th><th class="no-print">จัดการ</th>
+            </tr></thead>
+            <tbody>${rows}</tbody>
+          </table>
+        </div>
+      </div>
+    `;
+    return content;
+  }
+
+  function addCustomer(){
+    openModal("เพิ่มลูกค้า", `
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
+        <div><div class="text-xs font-black muted2 mb-1">ชื่อลูกค้า *</div><input id="m_c_name" class="input" placeholder="เช่น ร้าน A / คุณ B"></div>
+        <div><div class="text-xs font-black muted2 mb-1">เบอร์โทร</div><input id="m_c_phone" class="input" placeholder="08x-xxx-xxxx"></div>
+        <div class="md:col-span-2"><div class="text-xs font-black muted2 mb-1">หมายเหตุ</div><input id="m_c_note" class="input" placeholder="เช่น ส่งของทุกวันศุกร์"></div>
+      </div>
+    `, ()=>{
+      const name = normalizeCustomerName(document.getElementById("m_c_name").value);
+      if(!name) throw new Error("กรุณาระบุชื่อลูกค้า");
+      const phone = (document.getElementById("m_c_phone").value||"").trim();
+      const note = (document.getElementById("m_c_note").value||"").trim();
+      if(DB.customers.some(c=>c.active!==false && normalizeCustomerName(c.name)===name)){
+        throw new Error("ชื่อลูกค้านี้มีอยู่แล้ว");
+      }
+      DB.customers.push({id:uid(), name, phone, note, active:true, createdAt:new Date().toISOString()});
+      saveDB(); toast("เพิ่มลูกค้าเรียบร้อย"); render();
+    }, "เพิ่ม");
+  }
+
+  function editCustomer(id){
+    const c = DB.customers.find(x=>x.id===id);
+    if(!c) return;
+    openModal("แก้ไขลูกค้า", `
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
+        <div><div class="text-xs font-black muted2 mb-1">ชื่อลูกค้า *</div>
+          <input id="m_c_name" class="input" value="${htmlesc(c.name)}"></div>
+        <div><div class="text-xs font-black muted2 mb-1">เบอร์โทร</div>
+          <input id="m_c_phone" class="input" value="${htmlesc(c.phone||"")}"></div>
+        <div class="md:col-span-2"><div class="text-xs font-black muted2 mb-1">หมายเหตุ</div>
+          <input id="m_c_note" class="input" value="${htmlesc(c.note||"")}"></div>
+      </div>
+    `, ()=>{
+      const name = normalizeCustomerName(document.getElementById("m_c_name").value);
+      if(!name) throw new Error("กรุณาระบุชื่อลูกค้า");
+      if(DB.customers.some(x=>x.id!==id && x.active!==false && normalizeCustomerName(x.name)===name)){
+        throw new Error("ชื่อลูกค้านี้ซ้ำกับรายการอื่น");
+      }
+      c.name = name;
+      c.phone = (document.getElementById("m_c_phone").value||"").trim();
+      c.note = (document.getElementById("m_c_note").value||"").trim();
+      c.updatedAt = new Date().toISOString();
+      saveDB(); toast("อัปเดตลูกค้าเรียบร้อย"); render();
+    }, "บันทึก");
+  }
+
+  function deactivateCustomer(id){
+    const c = DB.customers.find(x=>x.id===id);
+    if(!c) return;
+    if(!confirm("ต้องการปิดการใช้งานลูกค้านี้ใช่ไหม?\n(บิลเก่าจะยังอยู่ แต่จะไม่แสดงในรายการเลือก)")) return;
+    c.active = false;
+    c.updatedAt = new Date().toISOString();
+    saveDB(); toast("ปิดการใช้งานลูกค้าแล้ว"); render();
+  }
+
+  function exportCustomers(){
+    downloadJSON("BKP_Customers.json", DB.customers);
+    toast("ส่งออกไฟล์ลูกค้าแล้ว");
+  }
+
+  /********** Products **********/
+  function pageProducts(){
+    const q = state.search.product.trim().toLowerCase();
+    const rows = DB.products
+      .filter(p=>p.active!==false)
+      .filter(p=> !q || (p.name||"").toLowerCase().includes(q) || (p.sku||"").toLowerCase().includes(q))
+      .sort((a,b)=>(a.name||"").localeCompare(b.name||""))
+      .map(p=>{
+        const cost = productCost(p);
+        const margin = p.price>0 ? ((p.price-cost)/p.price)*100 : 0;
+        const warn = margin < 15;
+        return `<tr>
+          <td>
+            <div class="font-black">${htmlesc(p.name)}</div>
+            <div class="text-xs font-bold muted2">SKU: ${htmlesc(p.sku||"—")} · หน่วย: ${htmlesc(p.unit||"กก.")}</div>
+          </td>
+          <td class="mono font-black">${money(p.price)}</td>
+          <td class="mono">${money(cost)}</td>
+          <td>${warn ? `<span class="chip chip-bad">ต่ำ ${margin.toFixed(1)}%</span>` : `<span class="chip chip-good">${margin.toFixed(1)}%</span>`}</td>
+          <td class="mono font-black">${money(p.price-cost)}</td>
+          <td class="no-print">
+            <div class="flex gap-2 flex-wrap">
+              <button class="btn btn-dark" onclick="editProduct('${p.id}')">แก้ไข</button>
+              <button class="btn btn-danger" onclick="deactivateProduct('${p.id}')">ลบ/ปิด</button>
+            </div>
+          </td>
+        </tr>`;
+      }).join("") || `<tr><td colspan="6" class="muted font-bold">ไม่พบสินค้า</td></tr>`;
+
+    const content = `
+      <div class="glass rounded-3xl p-5 md:p-7 soft-shadow">
+        ${pageHeader("สินค้า & โครงสร้างต้นทุน", "ปรับราคา/ทุนได้แบบละเอียด · ระบบเตือนกำไรต่ำ",
+          `<button class="btn btn-primary" onclick="addProduct()">+ เพิ่มสินค้า</button>
+           <button class="btn btn-dark" onclick="exportProducts()">ส่งออกสินค้า (JSON)</button>`
+        )}
+        <div class="mt-5 grid grid-cols-1 md:grid-cols-3 gap-3 no-print">
+          <div class="md:col-span-2">
+            <div class="text-xs font-black muted2 mb-2">ค้นหา (ชื่อ/sku)</div>
+            <input class="input" placeholder="พิมพ์เพื่อค้นหา..." value="${htmlesc(state.search.product)}"
+              oninput="state.search.product=this.value; render()">
+          </div>
+          <div>
+            <div class="text-xs font-black muted2 mb-2">รวมสินค้า (Active)</div>
+            <div class="glass2 rounded-2xl p-4 font-black mono">${DB.products.filter(x=>x.active!==false).length}</div>
+          </div>
+        </div>
+
+        <div class="mt-5 overflow-x-auto">
+          <table class="table">
+            <thead><tr>
+              <th>สินค้า</th><th>ราคา</th><th>ต้นทุนรวม</th><th>Margin</th><th>กำไร/หน่วย</th><th class="no-print">จัดการ</th>
+            </tr></thead>
+            <tbody>${rows}</tbody>
+          </table>
+        </div>
+
+        <div class="mt-5 glass2 rounded-3xl p-5">
+          <div class="text-lg font-black">แนวทางบันทึกต้นทุน (แนะนำ)</div>
+          <div class="text-sm font-bold muted2 mt-1">
+            ทุนวัตถุดิบ = RM · ทุนแฝง = ค่าไฟ/แพ็ค/สูญเสีย · ทุนดำเนินการ = ค่าแรง/บัญชี/จัดส่ง · ทุนอื่น = รายการเฉพาะกิจ
+          </div>
+        </div>
+      </div>
+    `;
+    return content;
+  }
+
+  function addProduct(){
+    openModal("เพิ่มสินค้า", `
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
+        <div><div class="text-xs font-black muted2 mb-1">ชื่อสินค้า *</div><input id="m_p_name" class="input" placeholder="เช่น น้ำยำปลาร้า"></div>
+        <div><div class="text-xs font-black muted2 mb-1">SKU</div><input id="m_p_sku" class="input" placeholder="รหัสสินค้า (ไม่บังคับ)"></div>
+        <div><div class="text-xs font-black muted2 mb-1">หน่วย</div><input id="m_p_unit" class="input" value="กก."></div>
+        <div><div class="text-xs font-black muted2 mb-1">ราคาขาย/หน่วย *</div><input id="m_p_price" class="input" type="number" value="0"></div>
+        <div class="md:col-span-2"><div class="text-xs font-black muted2 mb-1">หมายเหตุ</div><input id="m_p_note" class="input" placeholder=""></div>
+
+        <div class="md:col-span-2 mt-2">
+          <div class="text-sm font-black">โครงสร้างต้นทุน</div>
+          <div class="grid grid-cols-1 md:grid-cols-4 gap-2 mt-2">
+            <div><div class="text-[11px] font-black muted2 mb-1">ทุนวัตถุดิบ (RM)</div><input id="m_c_rm" class="input" type="number" value="0"></div>
+            <div><div class="text-[11px] font-black muted2 mb-1">ทุนแฝง</div><input id="m_c_hidden" class="input" type="number" value="0"></div>
+            <div><div class="text-[11px] font-black muted2 mb-1">ทุนดำเนินการ</div><input id="m_c_op" class="input" type="number" value="0"></div>
+            <div><div class="text-[11px] font-black muted2 mb-1">ทุนอื่น</div><input id="m_c_other" class="input" type="number" value="0"></div>
+          </div>
+        </div>
+      </div>
+    `, ()=>{
+      const name = String(document.getElementById("m_p_name").value||"").trim();
+      if(!name) throw new Error("กรุณาระบุชื่อสินค้า");
+      if(DB.products.some(p=>p.active!==false && String(p.name).trim()===name)){
+        throw new Error("ชื่อสินค้านี้มีอยู่แล้ว");
+      }
+      const p = {
+        id:uid(),
+        name,
+        sku:(document.getElementById("m_p_sku").value||"").trim(),
+        unit:(document.getElementById("m_p_unit").value||"").trim() || "กก.",
+        active:true,
+        price:n(document.getElementById("m_p_price").value),
+        cost:{
+          rm:n(document.getElementById("m_c_rm").value),
+          hidden:n(document.getElementById("m_c_hidden").value),
+          op:n(document.getElementById("m_c_op").value),
+          other:n(document.getElementById("m_c_other").value),
+        },
+        note:(document.getElementById("m_p_note").value||"").trim(),
+        createdAt:new Date().toISOString(),
+        updatedAt:null
+      };
+      DB.products.push(p);
+      saveDB(); toast("เพิ่มสินค้าเรียบร้อย"); render();
+    }, "เพิ่ม");
+  }
+
+  function editProduct(id){
+    const p = DB.products.find(x=>x.id===id);
+    if(!p) return;
+    openModal("แก้ไขสินค้า & ต้นทุน", `
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
+        <div><div class="text-xs font-black muted2 mb-1">ชื่อสินค้า *</div><input id="m_p_name" class="input" value="${htmlesc(p.name)}"></div>
+        <div><div class="text-xs font-black muted2 mb-1">SKU</div><input id="m_p_sku" class="input" value="${htmlesc(p.sku||"")}"></div>
+        <div><div class="text-xs font-black muted2 mb-1">หน่วย</div><input id="m_p_unit" class="input" value="${htmlesc(p.unit||"กก.")}"></div>
+        <div><div class="text-xs font-black muted2 mb-1">ราคาขาย/หน่วย *</div><input id="m_p_price" class="input" type="number" value="${htmlesc(p.price)}"></div>
+        <div class="md:col-span-2"><div class="text-xs font-black muted2 mb-1">หมายเหตุ</div><input id="m_p_note" class="input" value="${htmlesc(p.note||"")}"></div>
+
+        <div class="md:col-span-2 mt-2">
+          <div class="text-sm font-black">โครงสร้างต้นทุน</div>
+          <div class="grid grid-cols-1 md:grid-cols-4 gap-2 mt-2">
+            <div><div class="text-[11px] font-black muted2 mb-1">ทุนวัตถุดิบ (RM)</div><input id="m_c_rm" class="input" type="number" value="${htmlesc(p.cost?.rm ?? 0)}"></div>
+            <div><div class="text-[11px] font-black muted2 mb-1">ทุนแฝง</div><input id="m_c_hidden" class="input" type="number" value="${htmlesc(p.cost?.hidden ?? 0)}"></div>
+            <div><div class="text-[11px] font-black muted2 mb-1">ทุนดำเนินการ</div><input id="m_c_op" class="input" type="number" value="${htmlesc(p.cost?.op ?? 0)}"></div>
+            <div><div class="text-[11px] font-black muted2 mb-1">ทุนอื่น</div><input id="m_c_other" class="input" type="number" value="${htmlesc(p.cost?.other ?? 0)}"></div>
+          </div>
+          <div class="mt-3 text-xs font-bold muted2">
+            * การแก้ราคาหรือต้นทุนจะมีผลต่อ “การวิเคราะห์ปัจจุบัน” แต่บิลเก่าที่บันทึกแบบมีรายการสินค้า (items) จะเก็บ snapshot ราคา/ต้นทุน ณ ตอนขายไว้แล้ว
+          </div>
+        </div>
+      </div>
+    `, ()=>{
+      const name = String(document.getElementById("m_p_name").value||"").trim();
+      if(!name) throw new Error("กรุณาระบุชื่อสินค้า");
+      if(DB.products.some(x=>x.id!==id && x.active!==false && String(x.name).trim()===name)){
+        throw new Error("ชื่อสินค้านี้ซ้ำกับรายการอื่น");
+      }
+      p.name = name;
+      p.sku = (document.getElementById("m_p_sku").value||"").trim();
+      p.unit = (document.getElementById("m_p_unit").value||"").trim() || "กก.";
+      p.price = n(document.getElementById("m_p_price").value);
+      p.note = (document.getElementById("m_p_note").value||"").trim();
+      if(!isObj(p.cost)) p.cost = {rm:0, hidden:0, op:0, other:0};
+      p.cost.rm = n(document.getElementById("m_c_rm").value);
+      p.cost.hidden = n(document.getElementById("m_c_hidden").value);
+      p.cost.op = n(document.getElementById("m_c_op").value);
+      p.cost.other = n(document.getElementById("m_c_other").value);
+      p.updatedAt = new Date().toISOString();
+      saveDB(); toast("อัปเดตสินค้าเรียบร้อย"); render();
+    }, "บันทึก");
+  }
+
+  function deactivateProduct(id){
+    const p = DB.products.find(x=>x.id===id);
+    if(!p) return;
+    if(!confirm("ต้องการปิดการใช้งานสินค้านี้ใช่ไหม?\n(บิลเก่าจะยังอยู่ แต่จะไม่แสดงในการออกบิลใหม่)")) return;
+    p.active = false;
+    p.updatedAt = new Date().toISOString();
+    saveDB(); toast("ปิดการใช้งานสินค้าแล้ว"); render();
+  }
+
+  function exportProducts(){
+    downloadJSON("BKP_Products.json", DB.products);
+    toast("ส่งออกไฟล์สินค้าแล้ว");
+  }
+
+  /********** Sales (Invoice/Receipt) **********/
+  function pageSales(){
+    const q = state.search.sale.trim().toLowerCase();
+    const {start,end} = state.range;
+
+    const rows = DB.sales
+      .filter(s=>isISODate(s.date))
+      .filter(s=>inRange(s.date,start,end))
+      .filter(s=>{
+        if(!q) return true;
+        const c = DB.customers.find(x=>x.id===s.customerId);
+        const name = (c?.name||"").toLowerCase();
+        return name.includes(q) || String(s.id).toLowerCase().includes(q) || String(s.status||"").toLowerCase().includes(q);
+      })
+      .sort((a,b)=> new Date(b.date)-new Date(a.date))
+      .map(s=>{
+        const c = DB.customers.find(x=>x.id===s.customerId);
+        const due = Math.max(0, n(s.total)-n(s.paid));
+        return `<tr>
+          <td>
+            <div class="font-black">${htmlesc(c?.name||"(ไม่ระบุลูกค้า)")} <span class="muted2 text-xs font-black">#${htmlesc(s.id)}</span></div>
+            <div class="text-xs font-bold muted2">วันที่ ${htmlesc(s.date)} · ${badge(s.status)}</div>
+          </td>
+          <td class="mono font-black">${money(s.total)}</td>
+          <td class="mono">${money(s.paid)}</td>
+          <td>${due>0 ? `<span class="chip chip-bad">ค้าง ${money(due)}</span>` : `<span class="chip chip-good">ไม่มีค้าง</span>`}</td>
+          <td class="no-print">
+            <div class="flex gap-2 flex-wrap">
+              <button class="btn btn-dark" onclick="editSale('${s.id}')">แก้ไข</button>
+              <button class="btn btn-good" onclick="receiveMoney('${s.id}')">รับเงิน</button>
+              <button class="btn btn-dark" onclick="printDoc('sale','${s.id}')">พิมพ์ PDF</button>
+              <button class="btn btn-danger" onclick="deleteSale('${s.id}')">ลบ</button>
+            </div>
+          </td>
+        </tr>`;
+      }).join("") || `<tr><td colspan="5" class="muted font-bold">ยังไม่มีบิลในช่วงนี้</td></tr>`;
+
+    const content = `
+      <div class="glass rounded-3xl p-5 md:p-7 soft-shadow">
+        ${pageHeader("ขาย / ใบเสร็จ / ลูกหนี้", "ออกบิล · แก้ไข · รับเงิน · พิมพ์เอกสาร PDF · กรองตามช่วงวันที่",
+          `<button class="btn btn-primary" onclick="openQuickSale()">+ ออกบิลใหม่</button>
+           <button class="btn btn-dark" onclick="setTab('customers')">จัดการลูกค้า</button>`
+        )}
+
+        <div class="mt-5 grid grid-cols-1 md:grid-cols-3 gap-3 no-print">
+          <div class="md:col-span-2">
+            <div class="text-xs font-black muted2 mb-2">ค้นหา (ชื่อลูกค้า/รหัสบิล/สถานะ)</div>
+            <input class="input" placeholder="พิมพ์เพื่อค้นหา..." value="${htmlesc(state.search.sale)}"
+              oninput="state.search.sale=this.value; render()">
+          </div>
+          <div>
+            <div class="text-xs font-black muted2 mb-2">ยอดค้างรับ (ในช่วง)</div>
+            <div class="glass2 rounded-2xl p-4 font-black mono">${money(sum(DB.sales.filter(s=>isISODate(s.date)&&inRange(s.date,start,end)), s=>Math.max(0,n(s.total)-n(s.paid))))}</div>
+          </div>
+        </div>
+
+        <div class="mt-5 overflow-x-auto">
+          <table class="table">
+            <thead><tr><th>บิล</th><th>ยอดบิล</th><th>รับแล้ว</th><th>ค้างรับ</th><th class="no-print">จัดการ</th></tr></thead>
+            <tbody>${rows}</tbody>
+          </table>
+        </div>
+      </div>
+    `;
+    return content;
+  }
+
+  function openQuickSale(){
+    const customers = DB.customers.filter(c=>c.active!==false).sort((a,b)=>a.name.localeCompare(b.name));
+    const products = DB.products.filter(p=>p.active!==false).sort((a,b)=>a.name.localeCompare(b.name));
+    if(customers.length===0){
+      toast("ยังไม่มีลูกค้า: กรุณาเพิ่มลูกค้าก่อน");
+      setTab("customers");
+      return;
+    }
+    if(products.length===0){
+      toast("ยังไม่มีสินค้า: กรุณาเพิ่มสินค้าก่อน");
+      setTab("products");
+      return;
+    }
+
+    const prodRows = products.map(p=>{
+      return `
+        <div class="glass2 rounded-2xl p-3 flex items-center justify-between gap-3">
+          <div class="min-w-0">
+            <div class="font-black truncate">${htmlesc(p.name)}</div>
+            <div class="text-xs font-bold muted2">ราคา ${money(p.price)} · ทุนรวม ${money(productCost(p))} · หน่วย ${htmlesc(p.unit||"กก.")}</div>
+          </div>
+          <div class="flex items-center gap-2">
+            <input class="input mono" style="width:120px" type="number" min="0" step="0.01" placeholder="จำนวน" id="sale_qty_${p.id}">
+            <span class="muted2 text-xs font-black">${htmlesc(p.unit||"กก.")}</span>
+          </div>
+        </div>
+      `;
+    }).join("");
+
+    openModal("ออกบิลขายใหม่", `
+      <div class="grid grid-cols-1 md:grid-cols-3 gap-3">
+        <div>
+          <div class="text-xs font-black muted2 mb-1">วันที่</div>
+          <input id="sale_date" class="input" type="date" value="${htmlesc(todayISO())}">
+        </div>
+        <div class="md:col-span-2">
+          <div class="text-xs font-black muted2 mb-1">ลูกค้า</div>
+          <select id="sale_customer" class="input">
+            ${customers.map(c=>`<option value="${c.id}">${htmlesc(c.name)}</option>`).join("")}
+          </select>
+        </div>
+        <div class="md:col-span-3">
+          <div class="text-xs font-black muted2 mb-1">หมายเหตุ</div>
+          <input id="sale_note" class="input" placeholder="เช่น ส่งช่วงเย็น / เครดิต 7 วัน">
+        </div>
+      </div>
+
+      <div class="mt-4">
+        <div class="text-sm font-black">รายการสินค้า</div>
+        <div class="mt-2 grid grid-cols-1 gap-2 max-h-[340px] overflow-y-auto no-scrollbar pr-1">
+          ${prodRows}
+        </div>
+        <div class="mt-3 text-xs font-bold muted2">
+          * ระบบจะบันทึก snapshot ราคา/ต้นทุน ณ ตอนขาย เพื่อป้องกันข้อมูลเก่าเพี้ยนเมื่อคุณปรับราคาในอนาคต
+        </div>
+      </div>
+    `, ()=>{
+      const date = document.getElementById("sale_date").value;
+      const customerId = document.getElementById("sale_customer").value;
+      const note = (document.getElementById("sale_note").value||"").trim();
+      if(!isISODate(date)) throw new Error("วันที่ไม่ถูกต้อง");
+      if(!customerId) throw new Error("กรุณาเลือกลูกค้า");
+
+      const items = [];
+      for(const p of products){
+        const qty = n(document.getElementById("sale_qty_"+p.id).value);
+        if(qty>0){
+          items.push({
+            productId: p.id,
+            qty,
+            unit: p.unit || "กก.",
+            priceAt: n(p.price),
+            costAt: n(productCost(p))
+          });
+        }
+      }
+      if(items.length===0) throw new Error("กรุณาระบุจำนวนสินค้าอย่างน้อย 1 รายการ");
+
+      const sale = {
+        id: uid(),
+        date,
+        customerId,
+        items,
+        total: 0,
+        paid: 0,
+        status: "ค้างรับ",
+        note,
+        createdAt: new Date().toISOString(),
+        updatedAt: null
+      };
+      saleRecalc(sale);
+      DB.sales.unshift(sale);
+      saveDB();
+      toast("บันทึกบิลขายเรียบร้อย");
+      setTab("sales");
+    }, "บันทึกบิล");
+  }
+
+  function editSale(id){
+    const s = DB.sales.find(x=>x.id===id);
+    if(!s) return;
+    const customers = DB.customers.filter(c=>c.active!==false).sort((a,b)=>a.name.localeCompare(b.name));
+    const products = DB.products.filter(p=>p.active!==false).sort((a,b)=>a.name.localeCompare(b.name));
+
+    // Build existing items map by productId
+    const map = new Map((s.items||[]).map(it=>[it.productId, it]));
+    const prodRows = products.map(p=>{
+      const it = map.get(p.id);
+      const qtyVal = it ? it.qty : 0;
+      return `
+        <div class="glass2 rounded-2xl p-3 flex items-center justify-between gap-3">
+          <div class="min-w-0">
+            <div class="font-black truncate">${htmlesc(p.name)}</div>
+            <div class="text-xs font-bold muted2">ราคา ${money(p.price)} (ปัจจุบัน) · *บิลนี้เก็บราคาเดิมไว้เมื่อบันทึก*</div>
+          </div>
+          <div class="flex items-center gap-2">
+            <input class="input mono" style="width:120px" type="number" min="0" step="0.01" value="${htmlesc(qtyVal)}" id="sale_qty_${p.id}">
+            <span class="muted2 text-xs font-black">${htmlesc(p.unit||"กก.")}</span>
+          </div>
+        </div>
+      `;
+    }).join("");
+
+    openModal("แก้ไขบิลขาย", `
+      <div class="grid grid-cols-1 md:grid-cols-3 gap-3">
+        <div>
+          <div class="text-xs font-black muted2 mb-1">วันที่</div>
+          <input id="sale_date" class="input" type="date" value="${htmlesc(s.date)}">
+        </div>
+        <div class="md:col-span-2">
+          <div class="text-xs font-black muted2 mb-1">ลูกค้า</div>
+          <select id="sale_customer" class="input">
+            ${customers.map(c=>`<option value="${c.id}" ${c.id===s.customerId?"selected":""}>${htmlesc(c.name)}</option>`).join("")}
+          </select>
+        </div>
+        <div class="md:col-span-3">
+          <div class="text-xs font-black muted2 mb-1">หมายเหตุ</div>
+          <input id="sale_note" class="input" value="${htmlesc(s.note||"")}">
+        </div>
+      </div>
+
+      <div class="mt-4">
+        <div class="text-sm font-black">รายการสินค้า (ปรับจำนวนได้)</div>
+        <div class="mt-2 grid grid-cols-1 gap-2 max-h-[340px] overflow-y-auto no-scrollbar pr-1">
+          ${prodRows}
+        </div>
+        <div class="mt-3 grid grid-cols-1 md:grid-cols-3 gap-3">
+          <div><div class="text-xs font-black muted2 mb-1">ยอดรับเงิน (Paid)</div><input id="sale_paid" class="input mono" type="number" value="${htmlesc(s.paid)}"></div>
+          <div class="md:col-span-2 glass2 rounded-2xl p-4">
+            <div class="text-xs font-black muted2">สรุปบิล</div>
+            <div class="text-lg font-black mono mt-1">ยอดบิล: <span id="sale_total_preview">${money(s.total)}</span> · สถานะ: <span id="sale_status_preview">${htmlesc(s.status)}</span></div>
+            <div class="text-xs font-bold muted2 mt-1">* ระบบจะคำนวณยอดใหม่จากจำนวนที่แก้ไข (ยังคง snapshot priceAt/costAt เดิมของบิล ถ้ามีอยู่)</div>
+          </div>
+        </div>
+      </div>
+    `, ()=>{
+      const date = document.getElementById("sale_date").value;
+      const customerId = document.getElementById("sale_customer").value;
+      const note = (document.getElementById("sale_note").value||"").trim();
+      const paid = n(document.getElementById("sale_paid").value);
+      if(!isISODate(date)) throw new Error("วันที่ไม่ถูกต้อง");
+
+      // Rebuild items: keep old priceAt/costAt for existing; for new add snapshot from current product
+      const newItems = [];
+      for(const p of products){
+        const qty = n(document.getElementById("sale_qty_"+p.id).value);
+        if(qty>0){
+          const old = map.get(p.id);
+          newItems.push({
+            productId: p.id,
+            qty,
+            unit: p.unit || "กก.",
+            priceAt: old ? n(old.priceAt) : n(p.price),
+            costAt: old ? n(old.costAt) : n(productCost(p))
+          });
+        }
+      }
+      if(newItems.length===0) throw new Error("บิลต้องมีอย่างน้อย 1 รายการสินค้า");
+
+      s.date = date;
+      s.customerId = customerId;
+      s.note = note;
+      s.items = newItems;
+      s.paid = paid;
+      saleRecalc(s);
+      saveDB();
+      toast("แก้ไขบิลเรียบร้อย");
+      render();
+    }, "บันทึก");
+  }
+
+  function receiveMoney(id){
+    const s = DB.sales.find(x=>x.id===id);
+    if(!s) return;
+    const due = Math.max(0, n(s.total)-n(s.paid));
+    const amt = prompt("รับชำระเพิ่ม (บาท):", due>0? String(due) : "0");
+    if(amt===null) return;
+    const add = n(amt);
+    if(add<=0) { toast("ไม่ได้เพิ่มยอดรับเงิน"); return; }
+    s.paid = n(s.paid) + add;
+    saleRecalc(s);
+    saveDB();
+    toast("บันทึกรับเงินเรียบร้อย");
+    render();
+  }
+
+  function deleteSale(id){
+    if(!confirm("ลบบิลนี้ใช่ไหม? (ถ้าลบจะย้อนกลับไม่ได้)")) return;
+    const idx = DB.sales.findIndex(x=>x.id===id);
+    if(idx>=0){
+      DB.sales.splice(idx,1);
+      saveDB();
+      toast("ลบบิลเรียบร้อย");
+      render();
+    }
+  }
+
+  /********** Purchase Orders **********/
+  function pagePO(){
+    const q = state.search.po.trim().toLowerCase();
+    const {start,end} = state.range;
+
+    const rows = DB.purchaseOrders
+      .filter(po=>isISODate(po.date))
+      .filter(po=>inRange(po.date,start,end))
+      .filter(po=>{
+        if(!q) return true;
+        return (po.supplierName||"").toLowerCase().includes(q) || String(po.id).toLowerCase().includes(q) || (po.status||"").toLowerCase().includes(q);
+      })
+      .sort((a,b)=> new Date(b.date)-new Date(a.date))
+      .map(po=>{
+        const due = Math.max(0, n(po.total)-n(po.paid));
+        return `<tr>
+          <td>
+            <div class="font-black">${htmlesc(po.supplierName||"(ไม่ระบุผู้ขาย)")} <span class="muted2 text-xs font-black">#${htmlesc(po.id)}</span></div>
+            <div class="text-xs font-bold muted2">วันที่ ${htmlesc(po.date)} · ${badge(po.status)}</div>
+            <div class="text-xs font-bold muted2">${htmlesc(po.note||"")}</div>
+          </td>
+          <td class="mono font-black">${money(po.total)}</td>
+          <td class="mono">${money(po.paid)}</td>
+          <td>${due>0 ? `<span class="chip chip-warn">ค้าง ${money(due)}</span>` : `<span class="chip chip-good">ไม่มีค้าง</span>`}</td>
+          <td class="no-print">
+            <div class="flex gap-2 flex-wrap">
+              <button class="btn btn-dark" onclick="editPO('${po.id}')">แก้ไข</button>
+              <button class="btn btn-warn" onclick="payPO('${po.id}')">บันทึกจ่าย</button>
+              <button class="btn btn-dark" onclick="printDoc('po','${po.id}')">พิมพ์ PDF</button>
+              <button class="btn btn-danger" onclick="deletePO('${po.id}')">ลบ</button>
+            </div>
+          </td>
+        </tr>`;
+      }).join("") || `<tr><td colspan="5" class="muted font-bold">ยังไม่มี PO ในช่วงนี้</td></tr>`;
+
+    const content = `
+      <div class="glass rounded-3xl p-5 md:p-7 soft-shadow">
+        ${pageHeader("ใบสั่งซื้อ (PO)", "สร้าง/แก้ไข PO · ติดตามค้างจ่าย · พิมพ์ PDF รายใบ · กรองช่วงเวลา",
+          `<button class="btn btn-primary" onclick="openQuickPO()">+ ทำ PO ใหม่</button>`
+        )}
+
+        <div class="mt-5 grid grid-cols-1 md:grid-cols-3 gap-3 no-print">
+          <div class="md:col-span-2">
+            <div class="text-xs font-black muted2 mb-2">ค้นหา (ผู้ขาย/รหัส/สถานะ)</div>
+            <input class="input" placeholder="พิมพ์เพื่อค้นหา..." value="${htmlesc(state.search.po)}"
+              oninput="state.search.po=this.value; render()">
+          </div>
+          <div>
+            <div class="text-xs font-black muted2 mb-2">ยอดค้างจ่าย (ในช่วง)</div>
+            <div class="glass2 rounded-2xl p-4 font-black mono">${money(sum(DB.purchaseOrders.filter(po=>isISODate(po.date)&&inRange(po.date,start,end)), po=>Math.max(0,n(po.total)-n(po.paid))))}</div>
+          </div>
+        </div>
+
+        <div class="mt-5 overflow-x-auto">
+          <table class="table">
+            <thead><tr><th>PO</th><th>ยอดรวม</th><th>จ่ายแล้ว</th><th>ค้างจ่าย</th><th class="no-print">จัดการ</th></tr></thead>
+            <tbody>${rows}</tbody>
+          </table>
+        </div>
+      </div>
+    `;
+    return content;
+  }
+
+  function openQuickPO(){
+    openModal("สร้างใบสั่งซื้อ (PO) ใหม่", `
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
+        <div><div class="text-xs font-black muted2 mb-1">วันที่</div><input id="po_date" class="input" type="date" value="${htmlesc(todayISO())}"></div>
+        <div><div class="text-xs font-black muted2 mb-1">ผู้ขาย/ร้านค้า *</div><input id="po_supplier" class="input" placeholder="เช่น แม็คโคร / ร้านวัตถุดิบ"></div>
+        <div class="md:col-span-2"><div class="text-xs font-black muted2 mb-1">หมายเหตุ</div><input id="po_note" class="input" placeholder="เช่น รอบส่ง 10:00 น."></div>
+      </div>
+
+      <div class="mt-4">
+        <div class="text-sm font-black">รายการสินค้าใน PO</div>
+        <div id="po_items" class="mt-2 space-y-2"></div>
+        <div class="mt-3 flex gap-2">
+          <button class="btn btn-dark" onclick="addPOItemRow()">+ เพิ่มรายการ</button>
+          <div class="ml-auto glass2 rounded-2xl px-4 py-3 font-black mono">ยอดรวม: <span id="po_total_preview">฿0</span></div>
+        </div>
+        <div class="text-xs font-bold muted2 mt-2">* พิมพ์ PO รายใบได้จากปุ่ม “พิมพ์ PDF” ในรายการ PO</div>
+      </div>
+    `, ()=>{
+      const date = document.getElementById("po_date").value;
+      const supplierName = (document.getElementById("po_supplier").value||"").trim();
+      const note = (document.getElementById("po_note").value||"").trim();
+      if(!isISODate(date)) throw new Error("วันที่ไม่ถูกต้อง");
+      if(!supplierName) throw new Error("กรุณาระบุผู้ขาย/ร้านค้า");
+
+      const items = readPOItemsFromModal();
+      if(items.length===0) throw new Error("กรุณาเพิ่มรายการอย่างน้อย 1 รายการ");
+
+      const po = {
+        id: uid(),
+        date,
+        supplierName,
+        note,
+        items,
+        total: 0,
+        paid: 0,
+        status: "ค้างจ่าย",
+        createdAt: new Date().toISOString(),
+        updatedAt: null
+      };
+      poRecalc(po);
+      DB.purchaseOrders.unshift(po);
+      saveDB();
+      toast("สร้าง PO เรียบร้อย");
+      setTab("po");
+    }, "บันทึก PO");
+
+    // init first row
+    setTimeout(()=>{
+      addPOItemRow();
+      addPOItemRow();
+      recalcPOTotalPreview();
+    }, 0);
+  }
+
+  function addPOItemRow(prefill=null){
+    const wrap = document.getElementById("po_items");
+    if(!wrap) return;
+    const rid = uid();
+    const name = prefill?.name || "";
+    const qty = prefill?.qty ?? "";
+    const unit = prefill?.unit || "หน่วย";
+    const price = prefill?.price ?? "";
+    const row = document.createElement("div");
+    row.className = "glass2 rounded-2xl p-3 grid grid-cols-1 md:grid-cols-12 gap-2 items-end";
+    row.dataset.rid = rid;
+    row.innerHTML = `
+      <div class="md:col-span-5">
+        <div class="text-[11px] font-black muted2 mb-1">รายการ *</div>
+        <input class="input" placeholder="เช่น น้ำปลา/น้ำตาล/พริก" value="${htmlesc(name)}" data-f="name" oninput="recalcPOTotalPreview()">
+      </div>
+      <div class="md:col-span-2">
+        <div class="text-[11px] font-black muted2 mb-1">จำนวน *</div>
+        <input class="input mono" type="number" step="0.01" value="${htmlesc(qty)}" data-f="qty" oninput="recalcPOTotalPreview()">
+      </div>
+      <div class="md:col-span-2">
+        <div class="text-[11px] font-black muted2 mb-1">หน่วย</div>
+        <input class="input" value="${htmlesc(unit)}" data-f="unit">
+      </div>
+      <div class="md:col-span-2">
+        <div class="text-[11px] font-black muted2 mb-1">ราคา/หน่วย *</div>
+        <input class="input mono" type="number" step="0.01" value="${htmlesc(price)}" data-f="price" oninput="recalcPOTotalPreview()">
+      </div>
+      <div class="md:col-span-1 flex justify-end">
+        <button class="btn btn-danger" style="padding:.6rem .8rem" onclick="this.closest('[data-rid]').remove(); recalcPOTotalPreview()">ลบ</button>
+      </div>
+    `;
+    wrap.appendChild(row);
+  }
+
+  function readPOItemsFromModal(){
+    const wrap = document.getElementById("po_items");
+    if(!wrap) return [];
+    const rows = [...wrap.querySelectorAll("[data-rid]")];
+    const items = [];
+    for(const r of rows){
+      const get = (f)=> r.querySelector(`[data-f="${f}"]`)?.value ?? "";
+      const name = (get("name")||"").trim();
+      const qty = n(get("qty"));
+      const unit = (get("unit")||"").trim() || "หน่วย";
+      const price = n(get("price"));
+      if(name && qty>0 && price>=0){
+        items.push({name, qty, unit, price});
+      }
+    }
+    return items;
+  }
+
+  function recalcPOTotalPreview(){
+    const items = readPOItemsFromModal();
+    const total = sum(items, it=>it.qty*it.price);
+    const el = document.getElementById("po_total_preview");
+    if(el) el.textContent = money(total);
+  }
+
+  function editPO(id){
+    const po = DB.purchaseOrders.find(x=>x.id===id);
+    if(!po) return;
+    openModal("แก้ไข PO", `
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
+        <div><div class="text-xs font-black muted2 mb-1">วันที่</div><input id="po_date" class="input" type="date" value="${htmlesc(po.date)}"></div>
+        <div><div class="text-xs font-black muted2 mb-1">ผู้ขาย/ร้านค้า *</div><input id="po_supplier" class="input" value="${htmlesc(po.supplierName||"")}"></div>
+        <div class="md:col-span-2"><div class="text-xs font-black muted2 mb-1">หมายเหตุ</div><input id="po_note" class="input" value="${htmlesc(po.note||"")}"></div>
+      </div>
+
+      <div class="mt-4">
+        <div class="text-sm font-black">รายการ</div>
+        <div id="po_items" class="mt-2 space-y-2"></div>
+        <div class="mt-3 flex gap-2">
+          <button class="btn btn-dark" onclick="addPOItemRow()">+ เพิ่มรายการ</button>
+          <div class="ml-auto grid grid-cols-1 md:grid-cols-3 gap-2 items-end">
+            <div>
+              <div class="text-[11px] font-black muted2 mb-1">ยอดจ่ายแล้ว</div>
+              <input id="po_paid" class="input mono" type="number" step="0.01" value="${htmlesc(po.paid)}">
+            </div>
+            <div class="glass2 rounded-2xl px-4 py-3 font-black mono md:col-span-2">ยอดรวม: <span id="po_total_preview">${money(po.total)}</span> · ${badge(po.status)}</div>
+          </div>
+        </div>
+      </div>
+    `, ()=>{
+      const date = document.getElementById("po_date").value;
+      const supplierName = (document.getElementById("po_supplier").value||"").trim();
+      const note = (document.getElementById("po_note").value||"").trim();
+      const paid = n(document.getElementById("po_paid").value);
+      if(!isISODate(date)) throw new Error("วันที่ไม่ถูกต้อง");
+      if(!supplierName) throw new Error("กรุณาระบุผู้ขาย/ร้านค้า");
+      const items = readPOItemsFromModal();
+      if(items.length===0) throw new Error("PO ต้องมีอย่างน้อย 1 รายการ");
+
+      po.date = date;
+      po.supplierName = supplierName;
+      po.note = note;
+      po.items = items;
+      po.paid = paid;
+      poRecalc(po);
+      saveDB();
+      toast("แก้ไข PO เรียบร้อย");
+      render();
+    }, "บันทึก");
+
+    setTimeout(()=>{
+      // prefill rows
+      (po.items||[]).forEach(it=>addPOItemRow(it));
+      if((po.items||[]).length===0) addPOItemRow();
+      recalcPOTotalPreview();
+    },0);
+  }
+
+  function payPO(id){
+    const po = DB.purchaseOrders.find(x=>x.id===id);
+    if(!po) return;
+    const due = Math.max(0, n(po.total)-n(po.paid));
+    const amt = prompt("บันทึกจ่ายเพิ่ม (บาท):", due>0? String(due) : "0");
+    if(amt===null) return;
+    const add = n(amt);
+    if(add<=0){ toast("ไม่ได้เพิ่มยอดจ่าย"); return; }
+    po.paid = n(po.paid) + add;
+    poRecalc(po);
+    saveDB();
+    toast("บันทึกการจ่าย PO เรียบร้อย");
+    render();
+  }
+
+  function deletePO(id){
+    if(!confirm("ลบ PO นี้ใช่ไหม? (ถ้าลบจะย้อนกลับไม่ได้)")) return;
+    const idx = DB.purchaseOrders.findIndex(x=>x.id===id);
+    if(idx>=0){
+      DB.purchaseOrders.splice(idx,1);
+      saveDB();
+      toast("ลบ PO เรียบร้อย");
+      render();
+    }
+  }
+
+  /********** Expenses & Vouchers **********/
+  const EXP_CATS = ["ค่าแรง","ค่าบัญชี","ค่าไฟ","ค่าส่ง","ค่าวัตถุดิบเสริม","อื่นๆ"];
+
+  function pageExpenses(){
+    const q = state.search.expense.trim().toLowerCase();
+    const {start,end} = state.range;
+
+    const list = DB.expenses
+      .filter(e=>isISODate(e.date))
+      .filter(e=>inRange(e.date,start,end))
+      .filter(e=>{
+        if(!q) return true;
+        return (e.category||"").toLowerCase().includes(q) || (e.note||"").toLowerCase().includes(q) || String(e.amount).includes(q);
+      })
+      .sort((a,b)=> new Date(b.date)-new Date(a.date));
+
+    const total = sum(list, e=>e.amount);
+
+    const rows = list.map(e=>{
+      return `<tr>
+        <td class="mono font-black">${htmlesc(e.date)}</td>
+        <td><span class="chip">${htmlesc(e.category||"")}</span></td>
+        <td class="mono font-black">${money(e.amount)}</td>
+        <td class="muted2 font-bold">${htmlesc(e.note||"")}</td>
+        <td class="no-print">
+          <div class="flex gap-2 flex-wrap">
+            <button class="btn btn-dark" onclick="editExpense('${e.id}')">แก้ไข</button>
+            <button class="btn btn-dark" onclick="printDoc('expense','${e.id}')">พิมพ์ PDF</button>
+            <button class="btn btn-danger" onclick="deleteExpense('${e.id}')">ลบ</button>
+          </div>
+        </td>
+      </tr>`;
+    }).join("") || `<tr><td colspan="5" class="muted font-bold">ยังไม่มีค่าใช้จ่ายในช่วงนี้</td></tr>`;
+
+    const content = `
+      <div class="glass rounded-3xl p-5 md:p-7 soft-shadow">
+        ${pageHeader("ค่าใช้จ่าย / ใบเบิก", "บันทึกค่าใช้จ่าย · แยกหมวด · เลือกช่วงเวลา · ทำใบเบิก/พิมพ์ PDF",
+          `<button class="btn btn-primary" onclick="openQuickExpense()">+ บันทึกค่าใช้จ่าย</button>
+           <button class="btn btn-dark" onclick="openVoucherBuilder()">ทำใบเบิกตามช่วง</button>`
+        )}
+
+        <div class="mt-5 grid grid-cols-1 md:grid-cols-3 gap-3 no-print">
+          <div class="md:col-span-2">
+            <div class="text-xs font-black muted2 mb-2">ค้นหา (หมวด/หมายเหตุ/ยอด)</div>
+            <input class="input" placeholder="พิมพ์เพื่อค้นหา..." value="${htmlesc(state.search.expense)}"
+              oninput="state.search.expense=this.value; render()">
+          </div>
+          <div>
+            <div class="text-xs font-black muted2 mb-2">รวมค่าใช้จ่าย (ในช่วง)</div>
+            <div class="glass2 rounded-2xl p-4 font-black mono">${money(total)}</div>
+          </div>
+        </div>
+
+        <div class="mt-5 overflow-x-auto">
+          <table class="table">
+            <thead><tr><th>วันที่</th><th>หมวด</th><th>จำนวน</th><th>รายละเอียด</th><th class="no-print">จัดการ</th></tr></thead>
+            <tbody>${rows}</tbody>
+          </table>
+        </div>
+      </div>
+    `;
+    return content;
+  }
+
+  function openQuickExpense(){
+    openModal("บันทึกค่าใช้จ่าย", `
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
+        <div><div class="text-xs font-black muted2 mb-1">วันที่</div><input id="ex_date" class="input" type="date" value="${htmlesc(todayISO())}"></div>
+        <div><div class="text-xs font-black muted2 mb-1">หมวด</div>
+          <select id="ex_cat" class="input">
+            ${EXP_CATS.map(c=>`<option value="${htmlesc(c)}">${htmlesc(c)}</option>`).join("")}
+          </select>
+        </div>
+        <div><div class="text-xs font-black muted2 mb-1">จำนวนเงิน *</div><input id="ex_amt" class="input mono" type="number" step="0.01" value="0"></div>
+        <div><div class="text-xs font-black muted2 mb-1">รายละเอียด</div><input id="ex_note" class="input" placeholder="เช่น ค่าแรงผลิตรอบเดือน"></div>
+      </div>
+    `, ()=>{
+      const date = document.getElementById("ex_date").value;
+      const category = document.getElementById("ex_cat").value;
+      const amount = n(document.getElementById("ex_amt").value);
+      const note = (document.getElementById("ex_note").value||"").trim();
+      if(!isISODate(date)) throw new Error("วันที่ไม่ถูกต้อง");
+      if(amount<=0) throw new Error("กรุณาระบุจำนวนเงินมากกว่า 0");
+      DB.expenses.unshift({
+        id:uid(), date, category, amount, note,
+        createdAt:new Date().toISOString(), updatedAt:null
+      });
+      saveDB(); toast("บันทึกค่าใช้จ่ายเรียบร้อย"); setTab("expenses");
+    }, "บันทึก");
+  }
+
+  function editExpense(id){
+    const e = DB.expenses.find(x=>x.id===id);
+    if(!e) return;
+    openModal("แก้ไขค่าใช้จ่าย", `
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
+        <div><div class="text-xs font-black muted2 mb-1">วันที่</div><input id="ex_date" class="input" type="date" value="${htmlesc(e.date)}"></div>
+        <div><div class="text-xs font-black muted2 mb-1">หมวด</div>
+          <select id="ex_cat" class="input">
+            ${EXP_CATS.map(c=>`<option value="${htmlesc(c)}" ${c===e.category?"selected":""}>${htmlesc(c)}</option>`).join("")}
+          </select>
+        </div>
+        <div><div class="text-xs font-black muted2 mb-1">จำนวนเงิน *</div><input id="ex_amt" class="input mono" type="number" step="0.01" value="${htmlesc(e.amount)}"></div>
+        <div><div class="text-xs font-black muted2 mb-1">รายละเอียด</div><input id="ex_note" class="input" value="${htmlesc(e.note||"")}"></div>
+      </div>
+    `, ()=>{
+      const date = document.getElementById("ex_date").value;
+      const category = document.getElementById("ex_cat").value;
+      const amount = n(document.getElementById("ex_amt").value);
+      const note = (document.getElementById("ex_note").value||"").trim();
+      if(!isISODate(date)) throw new Error("วันที่ไม่ถูกต้อง");
+      if(amount<=0) throw new Error("กรุณาระบุจำนวนเงินมากกว่า 0");
+      e.date = date; e.category = category; e.amount = amount; e.note = note;
+      e.updatedAt = new Date().toISOString();
+      saveDB(); toast("อัปเดตค่าใช้จ่ายเรียบร้อย"); render();
+    }, "บันทึก");
+  }
+
+  function deleteExpense(id){
+    if(!confirm("ลบรายการค่าใช้จ่ายนี้ใช่ไหม? (ย้อนกลับไม่ได้)")) return;
+    const idx = DB.expenses.findIndex(x=>x.id===id);
+    if(idx>=0){
+      DB.expenses.splice(idx,1);
+      saveDB(); toast("ลบค่าใช้จ่ายเรียบร้อย"); render();
+    }
+  }
+
+  function openVoucherBuilder(){
+    const {start,end} = state.range;
+    // build category checkboxes
+    const checks = EXP_CATS.map(c=>`
+      <label class="glass2 rounded-2xl p-3 flex items-center gap-3 cursor-pointer">
+        <input type="checkbox" class="accent-blue-500" data-vcat="${htmlesc(c)}" checked>
+        <div class="font-black">${htmlesc(c)}</div>
+      </label>
     `).join("");
 
-  wrap.innerHTML=`
-    <div class="card no-print">
-      <h3 style="margin:0">ตั้งค่าช่วงเวลา</h3>
-      <div class="hr"></div>
-      <div class="grid g3">
-        <div><label>เริ่มวันที่</label><input id="r_start" type="date" value="${start}"></div>
-        <div><label>ถึงวันที่</label><input id="r_end" type="date" value="${end}"></div>
-        <div style="display:flex;gap:8px;align-items:flex-end">
-          <button class="btn pri" onclick="Actions.setRange($$('#r_start').value,$$('#r_end').value)">คำนวณ</button>
-          <button class="btn ghost" onclick="Actions.print()">พิมพ์/PDF</button>
+    openModal("ทำใบเบิกตามช่วงเวลา (เลือกหมวดได้)", `
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
+        <div><div class="text-xs font-black muted2 mb-1">เริ่มวันที่</div><input id="v_start" class="input" type="date" value="${htmlesc(start)}"></div>
+        <div><div class="text-xs font-black muted2 mb-1">ถึงวันที่</div><input id="v_end" class="input" type="date" value="${htmlesc(end)}"></div>
+        <div class="md:col-span-2"><div class="text-xs font-black muted2 mb-2">เลือกหมวดค่าใช้จ่ายที่จะทำใบเบิก</div>
+          <div class="grid grid-cols-1 md:grid-cols-3 gap-2">${checks}</div>
+        </div>
+        <div class="md:col-span-2"><div class="text-xs font-black muted2 mb-1">หัวข้อใบเบิก</div><input id="v_title" class="input" placeholder="เช่น ใบเบิกค่าแรงผลิตประจำเดือน"></div>
+        <div class="md:col-span-2"><div class="text-xs font-black muted2 mb-1">หมายเหตุ</div><input id="v_note" class="input" placeholder=""></div>
+
+        <div class="md:col-span-2 glass2 rounded-3xl p-4">
+          <div class="text-sm font-black">พรีวิว</div>
+          <div class="text-xs font-bold muted2 mt-1">เมื่อกด “สร้างใบเบิก” ระบบจะสร้างเอกสาร (พิมพ์เป็น PDF ได้ทันที) และไม่กระทบข้อมูลเดิม</div>
         </div>
       </div>
-      <div class="hint" style="margin-top:10px">
-        * ใช้หน้าเดียวทำรายงานผู้ถือหุ้น/ใบเบิกค่าแรง (เลือกช่วงเวลา แล้วพิมพ์)
-      </div>
-    </div>
+    `, ()=>{
+      const s = document.getElementById("v_start").value;
+      const e = document.getElementById("v_end").value;
+      const title = (document.getElementById("v_title").value||"").trim() || "ใบเบิกค่าใช้จ่าย";
+      const note = (document.getElementById("v_note").value||"").trim();
+      if(!isISODate(s)||!isISODate(e)) throw new Error("วันที่ไม่ถูกต้อง");
+      const cats = [...document.querySelectorAll("[data-vcat]")].filter(x=>x.checked).map(x=>x.dataset.vcat);
+      if(cats.length===0) throw new Error("กรุณาเลือกอย่างน้อย 1 หมวด");
 
-    <div class="card">
-      <div class="row" style="justify-content:space-between;align-items:flex-end">
-        <div>
-          <h3 style="margin:0">รายงานสรุปผลประกอบการ</h3>
-          <div class="hint">ช่วง ${start} ถึง ${end}</div>
-        </div>
-        <div class="chip">ออกรายงาน: ${iso()}</div>
-      </div>
-      <div class="hr"></div>
-      <div class="grid g4">
-        <div class="card hi"><div class="stat"><div><div class="k">ยอดขาย</div><div class="v">${fmtMoney(s.revenue)}</div><div class="s">รวมบิล</div></div><div class="chip">REV</div></div></div>
-        <div class="card"><div class="stat"><div><div class="k">รับเงินแล้ว</div><div class="v">${fmtMoney(s.paid)}</div><div class="s">Cash In</div></div><div class="chip ok">PAID</div></div></div>
-        <div class="card"><div class="stat"><div><div class="k">ค้างรับ</div><div class="v">${fmtMoney(s.receivable)}</div><div class="s">A/R</div></div><div class="chip wait">DUE</div></div></div>
-        <div class="card"><div class="stat"><div><div class="k">กำไรสุทธิ</div><div class="v">${fmtMoney(net)}</div><div class="s">ยอดขาย - รายจ่าย</div></div><div class="chip">NET</div></div></div>
-      </div>
+      // create virtual doc and print immediately
+      const list = DB.expenses.filter(x=>x && isISODate(x.date) && inRange(x.date,s,e) && cats.includes(x.category));
+      const total = sum(list, x=>x.amount);
 
-      <div style="height:12px"></div>
-      <div class="grid g2">
-        <div class="card">
-          <h3 style="margin:0">ค่าใช้จ่ายแยกตามหมวด</h3>
-          <div class="hr"></div>
-          <table>
-            <thead><tr><th>หมวด</th><th class="tdr">จำนวน</th></tr></thead>
-            <tbody>${Object.keys(expMap).length?expRows:`<tr><td colspan="2" class="muted">ไม่มีค่าใช้จ่ายในช่วงนี้</td></tr>`}</tbody>
-          </table>
-        </div>
-
-        <div class="card">
-          <h3 style="margin:0">ลูกค้าสูงสุดในช่วงเวลา</h3>
-          <div class="hr"></div>
-          <table>
-            <thead><tr><th>ลูกค้า</th><th class="tdr">ยอดซื้อ</th><th class="tdr">รับแล้ว</th><th class="tdr">ค้างรับ</th><th class="tdr">จำนวนบิล</th></tr></thead>
-            <tbody>${s.list.length?custRows:`<tr><td colspan="5" class="muted">ไม่มีบิลในช่วงนี้</td></tr>`}</tbody>
-          </table>
-        </div>
-      </div>
-    </div>
-  `;
-  return wrap;
-};
-
-/* ---------- 9) Boot ---------- */
-(function boot(){
-  // 1) migrate once before any render
-  try{ migrateV1Once(); }catch(e){
-    DB.meta.migrationNotes = [...(DB.meta.migrationNotes||[]), `MIGRATE_ERROR@${new Date().toISOString()} ${String(e)}`];
-    save();
+      printHTML(buildVoucherHTML({title, note, start:s, end:e, cats, list, total}));
+      toast("สร้างใบเบิกและเปิดหน้าพิมพ์แล้ว");
+    }, "สร้างใบเบิก");
   }
 
-  // 2) default page
-  STATE.page = "dash";
+  /********** Shareholders & Profit **********/
+  function pageShareholders(){
+    const q = state.search.shareholder.trim().toLowerCase();
+    const active = DB.shareholders.filter(s=>s.active!==false).filter(s=> !q || (s.name||"").toLowerCase().includes(q));
+    const totalInvest = sum(active, s=>s.investedAmount);
+    const percRows = active
+      .sort((a,b)=> (b.investedAmount||0)-(a.investedAmount||0))
+      .map(s=>{
+        const pct = totalInvest>0 ? (n(s.investedAmount)/totalInvest)*100 : 0;
+        return `<tr>
+          <td>
+            <div class="font-black">${htmlesc(s.name)}</div>
+            <div class="text-xs font-bold muted2">${htmlesc(s.note||"")}</div>
+          </td>
+          <td class="mono font-black">${money(s.investedAmount)}</td>
+          <td class="mono font-black">${pct.toFixed(2)}%</td>
+          <td class="no-print">
+            <div class="flex gap-2 flex-wrap">
+              <button class="btn btn-dark" onclick="editShareholder('${s.id}')">แก้ไข</button>
+              <button class="btn btn-danger" onclick="deactivateShareholder('${s.id}')">ลบ/ปิด</button>
+            </div>
+          </td>
+        </tr>`;
+      }).join("") || `<tr><td colspan="4" class="muted font-bold">ยังไม่มีผู้ถือหุ้น</td></tr>`;
 
-  // 3) render
+    // Profit periods
+    const {start,end} = state.range;
+    const prof = calcProfit(start,end);
+    const allocPending = sum(DB.profitPeriods.flatMap(pp=>pp.allocations||[]).filter(a=>a.status!=="รับแล้ว"), a=>a.amount);
+
+    const periodRows = DB.profitPeriods
+      .slice()
+      .sort((a,b)=> new Date(b.end)-new Date(a.end))
+      .map(pp=>{
+        const pending = sum((pp.allocations||[]).filter(a=>a.status!=="รับแล้ว"), a=>a.amount);
+        return `<tr>
+          <td>
+            <div class="font-black">${htmlesc(pp.start)} ถึง ${htmlesc(pp.end)}</div>
+            <div class="text-xs font-bold muted2">คำนวณเมื่อ ${htmlesc(pp.calculatedAt?.split("T")[0]||"")}</div>
+          </td>
+          <td class="mono font-black">${money(pp.profit)}</td>
+          <td>${pending>0 ? `<span class="chip chip-warn">ค้างรับ ${money(pending)}</span>` : `<span class="chip chip-good">ปิดงวดแล้ว</span>`}</td>
+          <td class="no-print">
+            <div class="flex gap-2 flex-wrap">
+              <button class="btn btn-dark" onclick="openProfitDetail('${pp.id}')">ดู/จัดการ</button>
+              <button class="btn btn-dark" onclick="printDoc('profit','${pp.id}')">พิมพ์ PDF</button>
+              <button class="btn btn-danger" onclick="deleteProfitPeriod('${pp.id}')">ลบ</button>
+            </div>
+          </td>
+        </tr>`;
+      }).join("") || `<tr><td colspan="4" class="muted font-bold">ยังไม่มีงวดกำไร</td></tr>`;
+
+    const content = `
+      <div class="glass rounded-3xl p-5 md:p-7 soft-shadow">
+        ${pageHeader("ผู้ถือหุ้น & การจัดสรรกำไร", "ลงทุนเป็นจำนวนเงิน → ระบบคำนวณสัดส่วนหุ้นอัตโนมัติ · คำนวณกำไรตามช่วง · จัดสรร/ติดตามค้างรับ",
+          `<button class="btn btn-primary" onclick="addShareholder()">+ เพิ่มผู้ถือหุ้น</button>
+           <button class="btn btn-dark" onclick="createProfitPeriodFromRange()">คำนวณกำไรช่วงนี้ → สร้างงวด</button>`
+        )}
+
+        <div class="mt-6 grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-4">
+          ${kpi("เงินลงทุนรวม", shortMoney(totalInvest), "รวมผู้ถือหุ้น Active", "pri")}
+          ${kpi("กำไรช่วงนี้", shortMoney(prof.profit), "รายได้ - ค่าใช้จ่าย (ตามช่วง)", prof.profit>=0?"good":"bad")}
+          ${kpi("ค้างรับปันผล", shortMoney(allocPending), "รวมทุกงวดที่ยังไม่รับ", allocPending>0?"warn":"good")}
+          ${kpi("จำนวนผู้ถือหุ้น", String(active.length), "Active", "pri")}
+        </div>
+
+        <div class="mt-6 glass2 rounded-3xl p-5 no-print">
+          <div class="grid grid-cols-1 md:grid-cols-3 gap-3">
+            <div class="md:col-span-2">
+              <div class="text-xs font-black muted2 mb-2">ค้นหา (ชื่อผู้ถือหุ้น)</div>
+              <input class="input" placeholder="พิมพ์เพื่อค้นหา..." value="${htmlesc(state.search.shareholder)}"
+                oninput="state.search.shareholder=this.value; render()">
+            </div>
+            <div>
+              <div class="text-xs font-black muted2 mb-2">สัดส่วนอัปเดตอัตโนมัติ</div>
+              <div class="glass2 rounded-2xl p-4 text-sm font-black">ฐาน: เงินลงทุนรวม</div>
+            </div>
+          </div>
+        </div>
+
+        <div class="mt-5 overflow-x-auto">
+          <table class="table">
+            <thead><tr><th>ผู้ถือหุ้น</th><th>เงินลงทุน</th><th>สัดส่วน</th><th class="no-print">จัดการ</th></tr></thead>
+            <tbody>${percRows}</tbody>
+          </table>
+        </div>
+
+        <div class="mt-6 glass2 rounded-3xl p-5">
+          <div class="flex items-end justify-between gap-3">
+            <div>
+              <div class="text-lg font-black">งวดกำไร & การรับปันผล</div>
+              <div class="text-xs font-bold muted2">สร้างงวด → จัดสรรตามสัดส่วน ณ วันคำนวณ → ติดตามรับแล้ว/ค้างรับ/ข้ามปี</div>
+            </div>
+          </div>
+          <div class="mt-4 overflow-x-auto">
+            <table class="table">
+              <thead><tr><th>งวด</th><th>กำไรสุทธิ</th><th>สถานะ</th><th class="no-print">จัดการ</th></tr></thead>
+              <tbody>${periodRows}</tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    `;
+    return content;
+  }
+
+  function addShareholder(){
+    openModal("เพิ่มผู้ถือหุ้น", `
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
+        <div><div class="text-xs font-black muted2 mb-1">ชื่อผู้ถือหุ้น *</div><input id="sh_name" class="input" placeholder="เช่น บี / กล้วย / เป้"></div>
+        <div><div class="text-xs font-black muted2 mb-1">เงินลงทุน (บาท) *</div><input id="sh_amt" class="input mono" type="number" step="0.01" value="0"></div>
+        <div class="md:col-span-2"><div class="text-xs font-black muted2 mb-1">หมายเหตุ</div><input id="sh_note" class="input" placeholder="เช่น ลงทุนรอบแรก"></div>
+      </div>
+    `, ()=>{
+      const name = (document.getElementById("sh_name").value||"").trim();
+      const amt = n(document.getElementById("sh_amt").value);
+      const note = (document.getElementById("sh_note").value||"").trim();
+      if(!name) throw new Error("กรุณาระบุชื่อผู้ถือหุ้น");
+      if(amt<=0) throw new Error("เงินลงทุนต้องมากกว่า 0");
+      if(DB.shareholders.some(x=>x.active!==false && x.name===name)){
+        throw new Error("มีผู้ถือหุ้นชื่อนี้อยู่แล้ว");
+      }
+      DB.shareholders.push({
+        id:uid(), name, active:true, investedAmount:amt, note,
+        createdAt:new Date().toISOString(), updatedAt:null
+      });
+      saveDB(); toast("เพิ่มผู้ถือหุ้นเรียบร้อย"); render();
+    }, "เพิ่ม");
+  }
+
+  function editShareholder(id){
+    const s = DB.shareholders.find(x=>x.id===id);
+    if(!s) return;
+    openModal("แก้ไขผู้ถือหุ้น", `
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
+        <div><div class="text-xs font-black muted2 mb-1">ชื่อผู้ถือหุ้น *</div><input id="sh_name" class="input" value="${htmlesc(s.name)}"></div>
+        <div><div class="text-xs font-black muted2 mb-1">เงินลงทุน (บาท) *</div><input id="sh_amt" class="input mono" type="number" step="0.01" value="${htmlesc(s.investedAmount)}"></div>
+        <div class="md:col-span-2"><div class="text-xs font-black muted2 mb-1">หมายเหตุ</div><input id="sh_note" class="input" value="${htmlesc(s.note||"")}"></div>
+      </div>
+      <div class="mt-3 text-xs font-bold muted2">* การปรับเงินลงทุนจะเปลี่ยนสัดส่วนหุ้น “ปัจจุบัน” และจะมีผลต่อการคำนวณงวดกำไรใหม่เท่านั้น (งวดเก่าจะเก็บ snapshot % ณ วันคำนวณ)</div>
+    `, ()=>{
+      const name = (document.getElementById("sh_name").value||"").trim();
+      const amt = n(document.getElementById("sh_amt").value);
+      const note = (document.getElementById("sh_note").value||"").trim();
+      if(!name) throw new Error("กรุณาระบุชื่อผู้ถือหุ้น");
+      if(amt<=0) throw new Error("เงินลงทุนต้องมากกว่า 0");
+      if(DB.shareholders.some(x=>x.id!==id && x.active!==false && x.name===name)){
+        throw new Error("ชื่อผู้ถือหุ้นซ้ำ");
+      }
+      s.name = name;
+      s.investedAmount = amt;
+      s.note = note;
+      s.updatedAt = new Date().toISOString();
+      saveDB(); toast("อัปเดตผู้ถือหุ้นเรียบร้อย"); render();
+    }, "บันทึก");
+  }
+
+  function deactivateShareholder(id){
+    const s = DB.shareholders.find(x=>x.id===id);
+    if(!s) return;
+    if(!confirm("ปิดการใช้งานผู้ถือหุ้นนี้ใช่ไหม?\n(งวดเก่าจะยังแสดงได้ แต่จะไม่รวมในสัดส่วนปัจจุบัน)")) return;
+    s.active = false;
+    s.updatedAt = new Date().toISOString();
+    saveDB(); toast("ปิดการใช้งานผู้ถือหุ้นแล้ว"); render();
+  }
+
+  function createProfitPeriodFromRange(){
+    const {start,end} = state.range;
+    const prof = calcProfit(start,end);
+    const {rows, totalInvest} = computeSharePercents();
+
+    if(rows.length===0){
+      toast("ยังไม่มีผู้ถือหุ้น: กรุณาเพิ่มผู้ถือหุ้นก่อน");
+      return;
+    }
+
+    const allocations = rows.map(s=>{
+      const pct = totalInvest>0 ? (n(s.investedAmount)/totalInvest)*100 : 0;
+      const amount = n(prof.profit) * (pct/100);
+      return {
+        id: uid(),
+        shareholderId: s.id,
+        percentAtCalc: pct,
+        amount: amount,
+        status: "ยังไม่รับ",
+        receivedAt: null,
+        note: ""
+      };
+    });
+
+    const period = {
+      id: uid(),
+      start, end,
+      revenue: prof.revenue,
+      expense: prof.expense,
+      profit: prof.profit,
+      calculatedAt: new Date().toISOString(),
+      allocations
+    };
+
+    DB.profitPeriods.unshift(period);
+    saveDB();
+    toast("สร้างงวดกำไรและจัดสรรเรียบร้อย");
+    render();
+  }
+
+  function openProfitDetail(id){
+    const pp = DB.profitPeriods.find(x=>x.id===id);
+    if(!pp) return;
+    const allocRows = (pp.allocations||[]).map(a=>{
+      const sh = DB.shareholders.find(s=>s.id===a.shareholderId) || {name:"(ไม่พบ)"};
+      const st = a.status || "ยังไม่รับ";
+      const chip = st==="รับแล้ว" ? "chip-good" : (st==="ยังไม่รับ" ? "chip-warn" : "chip-bad");
+      return `
+        <tr>
+          <td class="font-black">${htmlesc(sh.name)}</td>
+          <td class="mono">${a.percentAtCalc.toFixed(2)}%</td>
+          <td class="mono font-black">${money(a.amount)}</td>
+          <td><span class="chip ${chip}">${htmlesc(st)}</span></td>
+          <td class="mono">${htmlesc(a.receivedAt||"—")}</td>
+          <td class="no-print">
+            <div class="flex gap-2 flex-wrap">
+              <button class="btn btn-good" onclick="markDividendReceived('${pp.id}','${a.id}')">รับแล้ว</button>
+              <button class="btn btn-warn" onclick="markDividendPending('${pp.id}','${a.id}')">ยังไม่รับ</button>
+              <button class="btn btn-dark" onclick="editDividendNote('${pp.id}','${a.id}')">หมายเหตุ</button>
+            </div>
+          </td>
+        </tr>
+      `;
+    }).join("") || `<tr><td colspan="6" class="muted font-bold">ไม่มีรายการจัดสรร</td></tr>`;
+
+    openModal("รายละเอียดงวดกำไร", `
+      <div class="glass2 rounded-3xl p-5">
+        <div class="flex items-end justify-between gap-3">
+          <div>
+            <div class="text-lg font-black">งวด ${htmlesc(pp.start)} ถึง ${htmlesc(pp.end)}</div>
+            <div class="text-xs font-bold muted2">คำนวณเมื่อ ${htmlesc(pp.calculatedAt?.split("T")[0]||"")}</div>
+          </div>
+          <div class="text-right">
+            <div class="text-xs font-black muted2">กำไรสุทธิ</div>
+            <div class="text-2xl font-black mono">${money(pp.profit)}</div>
+          </div>
+        </div>
+        <div class="mt-4 grid grid-cols-1 md:grid-cols-3 gap-3">
+          <div class="glass2 rounded-2xl p-4">
+            <div class="text-xs font-black muted2">รายได้</div><div class="text-lg font-black mono">${money(pp.revenue)}</div>
+          </div>
+          <div class="glass2 rounded-2xl p-4">
+            <div class="text-xs font-black muted2">ค่าใช้จ่าย</div><div class="text-lg font-black mono">${money(pp.expense)}</div>
+          </div>
+          <div class="glass2 rounded-2xl p-4">
+            <div class="text-xs font-black muted2">กำไร</div><div class="text-lg font-black mono">${money(pp.profit)}</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="mt-4 overflow-x-auto">
+        <table class="table">
+          <thead><tr><th>ผู้ถือหุ้น</th><th>% ณ วันคำนวณ</th><th>จำนวนเงิน</th><th>สถานะ</th><th>วันที่รับ</th><th class="no-print">จัดการ</th></tr></thead>
+          <tbody>${allocRows}</tbody>
+        </table>
+      </div>
+
+      <div class="mt-4 flex gap-2 justify-end no-print">
+        <button class="btn btn-dark" onclick="printDoc('profit','${pp.id}')">พิมพ์ PDF</button>
+      </div>
+    `, ()=>{}, "ปิด");
+  }
+
+  function markDividendReceived(periodId, allocId){
+    const pp = DB.profitPeriods.find(x=>x.id===periodId);
+    if(!pp) return;
+    const a = (pp.allocations||[]).find(x=>x.id===allocId);
+    if(!a) return;
+    a.status = "รับแล้ว";
+    a.receivedAt = todayISO();
+    saveDB(); toast("อัปเดตสถานะ: รับแล้ว"); render();
+    // keep modal open: re-open detail
+    openProfitDetail(periodId);
+  }
+
+  function markDividendPending(periodId, allocId){
+    const pp = DB.profitPeriods.find(x=>x.id===periodId);
+    if(!pp) return;
+    const a = (pp.allocations||[]).find(x=>x.id===allocId);
+    if(!a) return;
+    a.status = "ยังไม่รับ";
+    a.receivedAt = null;
+    saveDB(); toast("อัปเดตสถานะ: ยังไม่รับ"); render();
+    openProfitDetail(periodId);
+  }
+
+  function editDividendNote(periodId, allocId){
+    const pp = DB.profitPeriods.find(x=>x.id===periodId);
+    if(!pp) return;
+    const a = (pp.allocations||[]).find(x=>x.id===allocId);
+    if(!a) return;
+    const note = prompt("หมายเหตุรายการนี้:", a.note||"");
+    if(note===null) return;
+    a.note = String(note||"").trim();
+    saveDB(); toast("บันทึกหมายเหตุแล้ว"); render();
+    openProfitDetail(periodId);
+  }
+
+  function deleteProfitPeriod(id){
+    if(!confirm("ลบงวดกำไรนี้ใช่ไหม? (ย้อนกลับไม่ได้)")) return;
+    const idx = DB.profitPeriods.findIndex(x=>x.id===id);
+    if(idx>=0){
+      DB.profitPeriods.splice(idx,1);
+      saveDB(); toast("ลบงวดกำไรเรียบร้อย"); render();
+    }
+  }
+
+  /********** Reports **********/
+  function pageReports(){
+    const {start,end} = state.range;
+    const p = calcProfit(start,end);
+
+    const sales = DB.sales.filter(s=>isISODate(s.date)&&inRange(s.date,start,end));
+    const expenses = DB.expenses.filter(e=>isISODate(e.date)&&inRange(e.date,start,end));
+    const pos = DB.purchaseOrders.filter(po=>isISODate(po.date)&&inRange(po.date,start,end));
+
+    // Product summary from sales items
+    const prodMap = new Map();
+    for(const s of sales){
+      for(const it of (s.items||[])){
+        const pid = it.productId;
+        if(!pid) continue;
+        if(!prodMap.has(pid)) prodMap.set(pid, {qty:0, rev:0, cogs:0});
+        const row = prodMap.get(pid);
+        row.qty += n(it.qty);
+        row.rev += n(it.qty)*n(it.priceAt);
+        row.cogs += n(it.qty)*n(it.costAt);
+      }
+    }
+    const prodRows = Array.from(prodMap.entries()).map(([pid,v])=>{
+      const p = DB.products.find(x=>x.id===pid);
+      const name = p ? p.name : "(สินค้าไม่พบ)";
+      const profit = v.rev - v.cogs;
+      return {name, ...v, profit};
+    }).sort((a,b)=>b.rev-a.rev);
+
+    const prodTable = prodRows.slice(0,50).map(r=>`
+      <tr>
+        <td class="font-black">${htmlesc(r.name)}</td>
+        <td class="mono">${r.qty.toFixed(2)}</td>
+        <td class="mono font-black">${money(r.rev)}</td>
+        <td class="mono">${money(r.cogs)}</td>
+        <td class="mono font-black">${money(r.profit)}</td>
+      </tr>
+    `).join("") || `<tr><td colspan="5" class="muted font-bold">ยังไม่มีข้อมูลสินค้าในบิล (ถ้าบิลเดิมไม่ได้บันทึกเป็นรายการสินค้า ระบบจะสรุปยอดรวมเท่านั้น)</td></tr>`;
+
+    // Expense breakdown
+    const expByCat = new Map();
+    for(const e of expenses){
+      const k = e.category || "อื่นๆ";
+      expByCat.set(k, (expByCat.get(k)||0) + n(e.amount));
+    }
+    const expRows = Array.from(expByCat.entries()).sort((a,b)=>b[1]-a[1]).map(([k,v])=>`
+      <tr><td class="font-black">${htmlesc(k)}</td><td class="mono font-black">${money(v)}</td></tr>
+    `).join("") || `<tr><td colspan="2" class="muted font-bold">ไม่มีค่าใช้จ่าย</td></tr>`;
+
+    const content = `
+      <div class="glass rounded-3xl p-5 md:p-7 soft-shadow">
+        ${pageHeader("รายงานรวมตามช่วงเวลา", "สรุปยอดขาย · ค่าใช้จ่าย · PO · สรุปสินค้า (ถ้ามีรายการสินค้าในบิล) · พิมพ์เป็น PDF",
+          `<button class="btn btn-primary" onclick="printDoc('report','range')">พิมพ์รายงาน PDF</button>`
+        )}
+
+        <div class="mt-6 grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-4">
+          ${kpi("ยอดขายรวม", shortMoney(p.revenue), `บิล ${sales.length} รายการ`, "pri")}
+          ${kpi("ค่าใช้จ่ายรวม", shortMoney(p.expense), `รายการ ${expenses.length} รายการ`, "warn")}
+          ${kpi("PO รวม", shortMoney(sum(pos, x=>x.total)), `PO ${pos.length} รายการ`, "pri")}
+          ${kpi("กำไรสุทธิ", shortMoney(p.profit), "รายได้ - ค่าใช้จ่าย", p.profit>=0?"good":"bad")}
+        </div>
+
+        <div class="mt-6 grid grid-cols-1 xl:grid-cols-2 gap-4">
+          <div class="glass2 rounded-3xl p-5">
+            <div class="text-lg font-black">สรุปสินค้า (Top)</div>
+            <div class="text-xs font-bold muted2 mt-1">แสดงเฉพาะบิลที่มีรายการสินค้า (items)</div>
+            <div class="mt-4 overflow-x-auto">
+              <table class="table">
+                <thead><tr><th>สินค้า</th><th>จำนวน</th><th>ยอดขาย</th><th>COGS</th><th>กำไรขั้นต้น</th></tr></thead>
+                <tbody>${prodTable}</tbody>
+              </table>
+            </div>
+          </div>
+
+          <div class="glass2 rounded-3xl p-5">
+            <div class="text-lg font-black">สรุปค่าใช้จ่ายตามหมวด</div>
+            <div class="mt-4 overflow-x-auto">
+              <table class="table">
+                <thead><tr><th>หมวด</th><th>รวม</th></tr></thead>
+                <tbody>${expRows}</tbody>
+              </table>
+            </div>
+
+            <div class="mt-4 glass2 rounded-2xl p-4">
+              <div class="text-xs font-black muted2">หมายเหตุ</div>
+              <div class="text-sm font-bold muted2 mt-1">
+                หากต้องการ “ใบเบิกเฉพาะหมวด + ช่วงเวลา” ให้ไปหน้า ค่าใช้จ่าย/ใบเบิก → ทำใบเบิกตามช่วง
+              </div>
+            </div>
+          </div>
+        </div>
+
+      </div>
+    `;
+    return content;
+  }
+
+  /********** Settings **********/
+  function pageSettings(){
+    const content = `
+      <div class="glass rounded-3xl p-5 md:p-7 soft-shadow">
+        ${pageHeader("ตั้งค่า", "ข้อมูลกิจการ · สำรอง/กู้คืน · เครื่องมือฉุกเฉิน (ไม่ลบข้อมูลอัตโนมัติ)",
+          `<button class="btn btn-dark" onclick="backupData()">สำรองข้อมูล (JSON)</button>
+           <button class="btn btn-dark" onclick="restoreData()">กู้คืนจาก JSON</button>`
+        )}
+
+        <div class="mt-6 glass2 rounded-3xl p-5">
+          <div class="text-lg font-black">ข้อมูลกิจการ (ใช้บนเอกสาร)</div>
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-3 mt-4">
+            <div><div class="text-xs font-black muted2 mb-1">ชื่อกิจการ</div><input id="set_name" class="input" value="${htmlesc(DB.settings.businessName||"")}"></div>
+            <div><div class="text-xs font-black muted2 mb-1">เบอร์โทร</div><input id="set_phone" class="input" value="${htmlesc(DB.settings.phone||"")}"></div>
+            <div class="md:col-span-2"><div class="text-xs font-black muted2 mb-1">ที่อยู่</div><input id="set_address" class="input" value="${htmlesc(DB.settings.address||"")}"></div>
+            <div><div class="text-xs font-black muted2 mb-1">เลขผู้เสียภาษี</div><input id="set_tax" class="input" value="${htmlesc(DB.settings.taxId||"")}"></div>
+          </div>
+          <div class="mt-4 flex justify-end no-print">
+            <button class="btn btn-primary" onclick="saveSettings()">บันทึกตั้งค่า</button>
+          </div>
+        </div>
+
+        <div class="mt-6 glass2 rounded-3xl p-5">
+          <div class="text-lg font-black text-red-200">โซนฉุกเฉิน (ระวัง)</div>
+          <div class="text-sm font-bold muted2 mt-1">
+            ปุ่มนี้จะ “ล้างฐานข้อมูล v3 PRO เท่านั้น” แต่จะไม่ลบ key เก่า (v1/v2) — ใช้เมื่อคุณต้องการเริ่มใหม่จริง ๆ
+          </div>
+          <div class="mt-4 no-print">
+            <button class="btn btn-danger" onclick="resetV3()">ล้างฐานข้อมูล v3 PRO</button>
+          </div>
+        </div>
+
+        <div class="mt-6 glass2 rounded-3xl p-5">
+          <div class="text-lg font-black">บันทึกระบบ (Audit)</div>
+          <div class="text-xs font-bold muted2 mt-1">เก็บ 200 รายการล่าสุด</div>
+          <div class="mt-4 overflow-x-auto">
+            <table class="table">
+              <thead><tr><th>เวลา</th><th>ประเภท</th><th>รายละเอียด</th></tr></thead>
+              <tbody>
+                ${(DB.audit||[]).slice(0,60).map(a=>`
+                  <tr>
+                    <td class="mono font-black">${htmlesc((a.at||"").replace("T"," ").slice(0,19))}</td>
+                    <td><span class="chip">${htmlesc(a.type||"")}</span></td>
+                    <td class="muted2 font-bold">${htmlesc(a.message||"")}</td>
+                  </tr>
+                `).join("") || `<tr><td colspan="3" class="muted font-bold">ไม่มีบันทึก</td></tr>`}
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+      </div>
+    `;
+    return content;
+  }
+
+  function saveSettings(){
+    DB.settings.businessName = (document.getElementById("set_name").value||"").trim();
+    DB.settings.phone = (document.getElementById("set_phone").value||"").trim();
+    DB.settings.address = (document.getElementById("set_address").value||"").trim();
+    DB.settings.taxId = (document.getElementById("set_tax").value||"").trim();
+    saveDB();
+    toast("บันทึกตั้งค่าแล้ว");
+    render();
+  }
+
+  function resetV3(){
+    if(!confirm("ยืนยันล้างฐานข้อมูล v3 PRO?\n(ข้อมูล v1/v2 ที่เป็น key เก่า จะยังอยู่ แต่ v3 นี้จะเริ่มใหม่)")) return;
+    localStorage.removeItem(APP_KEY);
+    DB = deepClone(EMPTY_DB);
+    DB.meta.migratedAt = new Date().toISOString();
+    DB.meta.migratedFrom = ["reset"];
+    saveDB();
+    toast("ล้างฐานข้อมูล v3 PRO แล้ว");
+    setTab("dashboard");
+  }
+
+  function backupData(){
+    downloadJSON(`BKP_ERP_PRO_V3_Backup_${todayISO()}.json`, DB);
+    toast("สำรองข้อมูลเป็น JSON แล้ว");
+  }
+
+  function restoreData(){
+    openModal("กู้คืนข้อมูลจาก JSON", `
+      <div class="glass2 rounded-3xl p-4">
+        <div class="text-sm font-black">วาง JSON ที่สำรองไว้</div>
+        <div class="text-xs font-bold muted2 mt-1">ระบบจะตรวจ schema ก่อนบันทึก</div>
+        <textarea id="restore_json" class="input mono mt-3" style="height:220px" placeholder="{ ... }"></textarea>
+      </div>
+    `, ()=>{
+      const txt = document.getElementById("restore_json").value;
+      const obj = safeParse(txt);
+      if(!obj || !obj.meta || obj.meta.schema!==3) throw new Error("ไฟล์ไม่ใช่ BKP ERP v3 schema");
+      // basic sanity
+      if(!Array.isArray(obj.customers) || !Array.isArray(obj.products) || !Array.isArray(obj.sales)) throw new Error("โครงสร้างข้อมูลไม่ครบ");
+      localStorage.setItem(APP_KEY, JSON.stringify(obj));
+      DB = obj;
+      toast("กู้คืนข้อมูลเรียบร้อย");
+      setTab("dashboard");
+    }, "กู้คืน");
+  }
+
+  /*************************************
+   * 6) Printing (PDF via Browser Print)
+   *************************************/
+  function printCurrent(){
+    window.print();
+  }
+
+  function buildDocShell(title, body){
+    const biz = DB.settings.businessName || "ครัวกลาง BKP Partnership";
+    const addr = DB.settings.address || "";
+    const phone = DB.settings.phone || "";
+    const tax = DB.settings.taxId || "";
+    return `
+      <!doctype html>
+      <html lang="th"><head>
+        <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+        <title>${htmlesc(title)}</title>
+        <link href="https://fonts.googleapis.com/css2?family=Sarabun:wght@300;400;600;700;800&display=swap" rel="stylesheet">
+        <style>
+          body{font-family:'Sarabun',system-ui;margin:24px;color:#111827}
+          .top{display:flex;justify-content:space-between;gap:16px;border-bottom:3px solid #2563eb;padding-bottom:12px;margin-bottom:16px}
+          .biz{font-weight:900;font-size:18px}
+          .muted{color:#6b7280;font-size:12px;font-weight:700}
+          table{width:100%;border-collapse:collapse;margin-top:12px}
+          th,td{border:1px solid #e5e7eb;padding:8px;font-size:13px}
+          th{background:#f3f4f6;text-align:left}
+          .right{text-align:right}
+          .mono{font-variant-numeric:tabular-nums}
+          .sum{margin-top:14px;display:flex;justify-content:flex-end}
+          .box{border:1px solid #e5e7eb;padding:10px 12px;border-radius:10px;min-width:260px}
+          .h1{font-size:20px;font-weight:900}
+          .h2{font-size:14px;font-weight:900;margin-top:14px}
+          .sign{margin-top:26px;display:flex;justify-content:space-between;gap:16px}
+          .line{border-top:1px dashed #9ca3af;margin-top:42px}
+          @media print{body{margin:0} .noprint{display:none}}
+        </style>
+      </head>
+      <body>
+        <div class="top">
+          <div>
+            <div class="biz">${htmlesc(biz)}</div>
+            <div class="muted">${htmlesc(addr)}</div>
+            <div class="muted">${phone?("โทร. "+htmlesc(phone)):""} ${tax?(" · เลขผู้เสียภาษี "+htmlesc(tax)):""}</div>
+          </div>
+          <div style="text-align:right">
+            <div class="h1">${htmlesc(title)}</div>
+            <div class="muted">พิมพ์เมื่อ ${new Date().toLocaleString("th-TH")}</div>
+          </div>
+        </div>
+        ${body}
+        <script>window.onload=()=>{window.print();};</script>
+      </body></html>
+    `;
+  }
+
+  function printHTML(html){
+    const w = window.open("", "_blank");
+    if(!w){ toast("เบราว์เซอร์บล็อกหน้าต่างป๊อปอัป: กรุณาอนุญาต pop-up"); return; }
+    w.document.open();
+    w.document.write(html);
+    w.document.close();
+  }
+
+  function printDoc(type, id){
+    if(type==="sale"){
+      const s = DB.sales.find(x=>x.id===id);
+      if(!s) return;
+      const c = DB.customers.find(x=>x.id===s.customerId);
+      const items = (s.items||[]).map(it=>{
+        const p = DB.products.find(x=>x.id===it.productId);
+        const name = p ? p.name : "(สินค้าไม่พบ)";
+        const line = n(it.qty)*n(it.priceAt);
+        return `<tr>
+          <td>${htmlesc(name)}</td>
+          <td class="right mono">${n(it.qty).toFixed(2)} ${htmlesc(it.unit||"")}</td>
+          <td class="right mono">${money(it.priceAt)}</td>
+          <td class="right mono">${money(line)}</td>
+        </tr>`;
+      }).join("") || `<tr><td colspan="4" class="muted">บิลนี้ไม่มีรายการสินค้า (อาจเป็นข้อมูลเก่าที่บันทึกยอดรวมเท่านั้น)</td></tr>`;
+
+      const due = Math.max(0, n(s.total)-n(s.paid));
+      const body = `
+        <div class="muted">เลขที่บิล: <span class="mono">${htmlesc(s.id)}</span> · วันที่: <span class="mono">${htmlesc(s.date)}</span></div>
+        <div class="muted">ลูกค้า: <b>${htmlesc(c?.name||"(ไม่ระบุลูกค้า)")}</b></div>
+        ${s.note?`<div class="muted">หมายเหตุ: ${htmlesc(s.note)}</div>`:""}
+        <table>
+          <thead><tr><th>รายการ</th><th class="right">จำนวน</th><th class="right">ราคา/หน่วย</th><th class="right">รวม</th></tr></thead>
+          <tbody>${items}</tbody>
+        </table>
+        <div class="sum">
+          <div class="box">
+            <div class="muted">ยอดบิล</div><div class="mono" style="font-weight:900;font-size:18px">${money(s.total)}</div>
+            <div class="muted" style="margin-top:8px">รับแล้ว</div><div class="mono" style="font-weight:900">${money(s.paid)}</div>
+            <div class="muted" style="margin-top:8px">ค้างรับ</div><div class="mono" style="font-weight:900">${money(due)}</div>
+          </div>
+        </div>
+        <div class="sign">
+          <div style="flex:1">
+            <div class="line"></div>
+            <div class="muted" style="text-align:center">ผู้รับเงิน</div>
+          </div>
+          <div style="flex:1">
+            <div class="line"></div>
+            <div class="muted" style="text-align:center">ผู้จ่ายเงิน</div>
+          </div>
+        </div>
+      `;
+      printHTML(buildDocShell("ใบเสร็จรับเงิน / ใบขาย", body));
+      return;
+    }
+
+    if(type==="po"){
+      const po = DB.purchaseOrders.find(x=>x.id===id);
+      if(!po) return;
+      const items = (po.items||[]).map(it=>{
+        const line = n(it.qty)*n(it.price);
+        return `<tr>
+          <td>${htmlesc(it.name)}</td>
+          <td class="right mono">${n(it.qty).toFixed(2)} ${htmlesc(it.unit||"")}</td>
+          <td class="right mono">${money(it.price)}</td>
+          <td class="right mono">${money(line)}</td>
+        </tr>`;
+      }).join("");
+
+      const due = Math.max(0, n(po.total)-n(po.paid));
+      const body = `
+        <div class="muted">เลขที่ PO: <span class="mono">${htmlesc(po.id)}</span> · วันที่: <span class="mono">${htmlesc(po.date)}</span></div>
+        <div class="muted">ผู้ขาย/ร้านค้า: <b>${htmlesc(po.supplierName||"(ไม่ระบุ)")}</b></div>
+        ${po.note?`<div class="muted">หมายเหตุ: ${htmlesc(po.note)}</div>`:""}
+        <table>
+          <thead><tr><th>รายการ</th><th class="right">จำนวน</th><th class="right">ราคา/หน่วย</th><th class="right">รวม</th></tr></thead>
+          <tbody>${items || `<tr><td colspan="4" class="muted">ไม่มีรายการ</td></tr>`}</tbody>
+        </table>
+        <div class="sum">
+          <div class="box">
+            <div class="muted">ยอดรวม</div><div class="mono" style="font-weight:900;font-size:18px">${money(po.total)}</div>
+            <div class="muted" style="margin-top:8px">จ่ายแล้ว</div><div class="mono" style="font-weight:900">${money(po.paid)}</div>
+            <div class="muted" style="margin-top:8px">ค้างจ่าย</div><div class="mono" style="font-weight:900">${money(due)}</div>
+          </div>
+        </div>
+        <div class="sign">
+          <div style="flex:1">
+            <div class="line"></div>
+            <div class="muted" style="text-align:center">ผู้จัดทำ</div>
+          </div>
+          <div style="flex:1">
+            <div class="line"></div>
+            <div class="muted" style="text-align:center">ผู้อนุมัติ</div>
+          </div>
+        </div>
+      `;
+      printHTML(buildDocShell("ใบสั่งซื้อ (PO)", body));
+      return;
+    }
+
+    if(type==="expense"){
+      const e = DB.expenses.find(x=>x.id===id);
+      if(!e) return;
+      const body = `
+        <div class="muted">เลขที่รายการ: <span class="mono">${htmlesc(e.id)}</span> · วันที่: <span class="mono">${htmlesc(e.date)}</span></div>
+        <div class="muted">หมวด: <b>${htmlesc(e.category||"")}</b></div>
+        ${e.note?`<div class="muted">รายละเอียด: ${htmlesc(e.note)}</div>`:""}
+        <div class="sum">
+          <div class="box">
+            <div class="muted">จำนวนเงิน</div><div class="mono" style="font-weight:900;font-size:18px">${money(e.amount)}</div>
+          </div>
+        </div>
+        <div class="sign">
+          <div style="flex:1">
+            <div class="line"></div>
+            <div class="muted" style="text-align:center">ผู้เบิก</div>
+          </div>
+          <div style="flex:1">
+            <div class="line"></div>
+            <div class="muted" style="text-align:center">ผู้อนุมัติ</div>
+          </div>
+        </div>
+      `;
+      printHTML(buildDocShell("ใบเบิก/ใบสำคัญจ่าย", body));
+      return;
+    }
+
+    if(type==="profit"){
+      const pp = DB.profitPeriods.find(x=>x.id===id);
+      if(!pp) return;
+      const rows = (pp.allocations||[]).map(a=>{
+        const sh = DB.shareholders.find(s=>s.id===a.shareholderId) || {name:"(ไม่พบ)"};
+        return `<tr>
+          <td>${htmlesc(sh.name)}</td>
+          <td class="right mono">${a.percentAtCalc.toFixed(2)}%</td>
+          <td class="right mono">${money(a.amount)}</td>
+          <td class="right">${htmlesc(a.status||"")}</td>
+          <td class="right mono">${htmlesc(a.receivedAt||"—")}</td>
+        </tr>`;
+      }).join("") || `<tr><td colspan="5" class="muted">ไม่มีรายการ</td></tr>`;
+
+      const body = `
+        <div class="muted">งวด: <b>${htmlesc(pp.start)} ถึง ${htmlesc(pp.end)}</b> · คำนวณเมื่อ ${htmlesc(pp.calculatedAt?.split("T")[0]||"")}</div>
+        <table>
+          <thead><tr><th>ผู้ถือหุ้น</th><th class="right">% ณ วันคำนวณ</th><th class="right">จำนวนเงิน</th><th class="right">สถานะ</th><th class="right">วันที่รับ</th></tr></thead>
+          <tbody>${rows}</tbody>
+        </table>
+        <div class="sum">
+          <div class="box">
+            <div class="muted">รายได้</div><div class="mono" style="font-weight:900">${money(pp.revenue)}</div>
+            <div class="muted" style="margin-top:8px">ค่าใช้จ่าย</div><div class="mono" style="font-weight:900">${money(pp.expense)}</div>
+            <div class="muted" style="margin-top:8px">กำไรสุทธิ</div><div class="mono" style="font-weight:900;font-size:18px">${money(pp.profit)}</div>
+          </div>
+        </div>
+      `;
+      printHTML(buildDocShell("รายงานกำไร & การจัดสรรผู้ถือหุ้น", body));
+      return;
+    }
+
+    if(type==="report" && id==="range"){
+      const {start,end} = state.range;
+      const p = calcProfit(start,end);
+      const body = `
+        <div class="muted">ช่วงรายงาน: <b>${htmlesc(start)} ถึง ${htmlesc(end)}</b></div>
+        <div class="sum">
+          <div class="box">
+            <div class="muted">ยอดขายรวม</div><div class="mono" style="font-weight:900">${money(p.revenue)}</div>
+            <div class="muted" style="margin-top:8px">ค่าใช้จ่ายรวม</div><div class="mono" style="font-weight:900">${money(p.expense)}</div>
+            <div class="muted" style="margin-top:8px">กำไรสุทธิ</div><div class="mono" style="font-weight:900;font-size:18px">${money(p.profit)}</div>
+          </div>
+        </div>
+      `;
+      printHTML(buildDocShell("รายงานรวมตามช่วงเวลา", body));
+      return;
+    }
+  }
+
+  function buildVoucherHTML({title, note, start, end, cats, list, total}){
+    const rows = list.sort((a,b)=>new Date(a.date)-new Date(b.date)).map(e=>`
+      <tr>
+        <td class="mono">${htmlesc(e.date)}</td>
+        <td>${htmlesc(e.category)}</td>
+        <td>${htmlesc(e.note||"")}</td>
+        <td class="right mono">${money(e.amount)}</td>
+      </tr>
+    `).join("") || `<tr><td colspan="4" class="muted">ไม่มีรายการในเงื่อนไขที่เลือก</td></tr>`;
+
+    const body = `
+      <div class="muted">หัวข้อ: <b>${htmlesc(title)}</b></div>
+      <div class="muted">ช่วง: ${htmlesc(start)} ถึง ${htmlesc(end)} · หมวด: ${htmlesc(cats.join(", "))}</div>
+      ${note?`<div class="muted">หมายเหตุ: ${htmlesc(note)}</div>`:""}
+      <table>
+        <thead><tr><th>วันที่</th><th>หมวด</th><th>รายละเอียด</th><th class="right">จำนวนเงิน</th></tr></thead>
+        <tbody>${rows}</tbody>
+      </table>
+      <div class="sum">
+        <div class="box">
+          <div class="muted">รวมทั้งสิ้น</div><div class="mono" style="font-weight:900;font-size:18px">${money(total)}</div>
+        </div>
+      </div>
+      <div class="sign">
+        <div style="flex:1">
+          <div class="line"></div>
+          <div class="muted" style="text-align:center">ผู้เบิก</div>
+        </div>
+        <div style="flex:1">
+          <div class="line"></div>
+          <div class="muted" style="text-align:center">ผู้อนุมัติ</div>
+        </div>
+      </div>
+    `;
+    return buildDocShell("ใบเบิกค่าใช้จ่าย", body);
+  }
+
+  /*************************************
+   * 7) Global actions / glue
+   *************************************/
+  function applyRange(){
+    const s = document.getElementById("rng-start")?.value;
+    const e = document.getElementById("rng-end")?.value;
+    if(!isISODate(s)||!isISODate(e)){
+      toast("ช่วงวันที่ไม่ถูกต้อง");
+      return;
+    }
+    state.range.start = s;
+    state.range.end = e;
+    toast("อัปเดตช่วงรายงานแล้ว");
+    render();
+  }
+
+  // Quick actions used in dashboard
+  function openQuickExpense(){ window.openQuickExpense = openQuickExpense; openQuickExpense(); }
+  function openQuickPO(){ window.openQuickPO = openQuickPO; openQuickPO(); }
+
+  /*************************************
+   * 8) Render router
+   *************************************/
+  function render(){
+    // expose for inline handlers
+    window.state = state;
+    window.setTab = setTab;
+
+    window.applyRange = applyRange;
+    window.backupData = backupData;
+    window.restoreData = restoreData;
+    window.saveSettings = saveSettings;
+    window.resetV3 = resetV3;
+
+    window.addCustomer = addCustomer;
+    window.editCustomer = editCustomer;
+    window.deactivateCustomer = deactivateCustomer;
+    window.exportCustomers = exportCustomers;
+
+    window.addProduct = addProduct;
+    window.editProduct = editProduct;
+    window.deactivateProduct = deactivateProduct;
+    window.exportProducts = exportProducts;
+
+    window.openQuickSale = openQuickSale;
+    window.editSale = editSale;
+    window.receiveMoney = receiveMoney;
+    window.deleteSale = deleteSale;
+
+    window.openQuickPO = openQuickPO;
+    window.addPOItemRow = addPOItemRow;
+    window.recalcPOTotalPreview = recalcPOTotalPreview;
+    window.editPO = editPO;
+    window.payPO = payPO;
+    window.deletePO = deletePO;
+
+    window.openQuickExpense = openQuickExpense;
+    window.editExpense = editExpense;
+    window.deleteExpense = deleteExpense;
+    window.openVoucherBuilder = openVoucherBuilder;
+
+    window.addShareholder = addShareholder;
+    window.editShareholder = editShareholder;
+    window.deactivateShareholder = deactivateShareholder;
+    window.createProfitPeriodFromRange = createProfitPeriodFromRange;
+    window.openProfitDetail = openProfitDetail;
+    window.markDividendReceived = markDividendReceived;
+    window.markDividendPending = markDividendPending;
+    window.editDividendNote = editDividendNote;
+    window.deleteProfitPeriod = deleteProfitPeriod;
+
+    window.printDoc = printDoc;
+    window.printCurrent = printCurrent;
+    window.printHTML = printHTML;
+
+    window.closeModal = closeModal;
+    window.submitModal = submitModal;
+
+    // page router
+    let content = "";
+    if(state.tab==="dashboard") content = pageDashboard();
+    else if(state.tab==="customers") content = pageCustomers();
+    else if(state.tab==="products") content = pageProducts();
+    else if(state.tab==="sales") content = pageSales();
+    else if(state.tab==="po") content = pagePO();
+    else if(state.tab==="expenses") content = pageExpenses();
+    else if(state.tab==="shareholders") content = pageShareholders();
+    else if(state.tab==="reports") content = pageReports();
+    else if(state.tab==="settings") content = pageSettings();
+    else content = pageDashboard();
+
+    root.innerHTML = layout(content);
+  }
+
+  // first render
   render();
-})();
-</script>
+  toast("ระบบพร้อมใช้งาน · ข้อมูลเดิมถูกนำเข้าอัตโนมัติแล้ว");
+  </script>
 </body>
 </html>
