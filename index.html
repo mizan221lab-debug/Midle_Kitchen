@@ -1,853 +1,1096 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="th">
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>BKP Kitchen ERP (Single-File)</title>
-
-  <!-- Tailwind + Font -->
-  <script src="https://cdn.tailwindcss.com"></script>
+  <title>BKP ERP v3-A | Core + Migration</title>
   <link href="https://fonts.googleapis.com/css2?family=Sarabun:wght@300;400;600;700;800&display=swap" rel="stylesheet">
-
-  <!-- React (UMD) -->
-  <script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
-  <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
-
-  <!-- Chart.js (for graphs, lighter + stable on GH Pages) -->
-  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
-
-  <!-- Lucide Icons -->
-  <script src="https://unpkg.com/lucide@latest"></script>
-
   <style>
-    body { font-family: 'Sarabun', sans-serif; background:#f1f5f9; margin:0; }
-    .glass-card { background: rgba(255,255,255,0.95); backdrop-filter: blur(10px); border: 1px solid rgba(226,232,240,.9); }
-    .sidebar-active { background:#2563eb; color:#fff; box-shadow:0 10px 15px -3px rgba(37,99,235,.25); }
-    .input-premium{ width:100%; padding:1rem; border-radius:1rem; border:1px solid #e2e8f0; background:#f8fafc; font-weight:700; outline:none; transition:.15s; }
-    .input-premium:focus{ box-shadow:0 0 0 2px rgba(59,130,246,.55); background:#fff; }
-    .no-scrollbar::-webkit-scrollbar{ display:none; }
-    @media print { .no-print{ display:none !important; } body{ background:#fff; -webkit-print-color-adjust:exact; } main{ padding:0 !important; margin:0 !important; } }
-    .animate-in{ animation: fadeIn .35s ease-out; }
-    @keyframes fadeIn { from{ opacity:0; transform: translateY(10px);} to{ opacity:1; transform: translateY(0);} }
-    .mono{ font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace; }
+    :root{
+      --bg:#f1f5f9; --card:#ffffff; --ink:#0f172a; --muted:#64748b; --line:#e2e8f0;
+      --pri:#2563eb; --pri2:#1d4ed8; --ok:#16a34a; --warn:#dc2626; --slate:#0f172a;
+      --soft:#f8fafc;
+    }
+    *{box-sizing:border-box}
+    html,body{height:100%}
+    body{margin:0;font-family:"Sarabun",system-ui;background:var(--bg);color:var(--ink)}
+    a{color:inherit}
+    .app{display:flex;min-height:100vh}
+    .sidebar{width:280px;background:var(--slate);color:#fff;padding:18px 14px;position:sticky;top:0;height:100vh;overflow:auto}
+    .brand{display:flex;gap:10px;align-items:center;margin-bottom:14px;padding:8px 10px;border:1px solid rgba(255,255,255,.08);border-radius:14px}
+    .brand .logo{width:40px;height:40px;border-radius:14px;background:var(--pri);display:flex;align-items:center;justify-content:center;font-weight:900}
+    .brand h1{font-size:16px;margin:0}
+    .brand small{display:block;color:rgba(255,255,255,.65);font-weight:700;letter-spacing:.2px}
+    .navgrp{margin-top:12px}
+    .navttl{padding:10px 12px;color:rgba(255,255,255,.45);font-weight:900;font-size:11px;letter-spacing:.12em;text-transform:uppercase}
+    .nav button{width:100%;text-align:left;border:none;background:transparent;color:rgba(255,255,255,.78);padding:10px 12px;border-radius:12px;cursor:pointer;display:flex;gap:10px;align-items:center;font-weight:800}
+    .nav button:hover{background:rgba(255,255,255,.06);color:#fff}
+    .nav button.active{background:var(--pri);color:#fff;box-shadow:0 10px 25px rgba(37,99,235,.25)}
+    .nav .dot{width:10px;height:10px;border-radius:999px;background:rgba(255,255,255,.25)}
+    .nav button.active .dot{background:#fff}
+    .main{flex:1;padding:18px;overflow:auto}
+    .topbar{display:flex;align-items:flex-end;justify-content:space-between;gap:12px;margin-bottom:16px}
+    .topbar h2{margin:0;font-size:22px;font-weight:900}
+    .topbar .sub{color:var(--muted);font-weight:800;font-size:12px}
+    .topbar .right{display:flex;gap:8px;flex-wrap:wrap}
+    .btn{border:none;border-radius:12px;padding:10px 12px;font-weight:900;cursor:pointer}
+    .btn.pri{background:var(--pri);color:#fff}
+    .btn.pri:hover{background:var(--pri2)}
+    .btn.ghost{background:#fff;border:1px solid var(--line)}
+    .btn.ghost:hover{background:var(--soft)}
+    .btn.danger{background:#fee2e2;color:#991b1b;border:1px solid #fecaca}
+    .btn.ok{background:#dcfce7;color:#166534;border:1px solid #bbf7d0}
+    .grid{display:grid;gap:12px}
+    .g4{grid-template-columns:repeat(4,minmax(0,1fr))}
+    .g3{grid-template-columns:repeat(3,minmax(0,1fr))}
+    .g2{grid-template-columns:repeat(2,minmax(0,1fr))}
+    @media (max-width:1200px){.g4{grid-template-columns:repeat(2,minmax(0,1fr))}}
+    @media (max-width:760px){
+      .sidebar{display:none}
+      .main{padding:12px}
+      .g4,.g3,.g2{grid-template-columns:1fr}
+    }
+    .card{background:var(--card);border:1px solid var(--line);border-radius:18px;padding:14px}
+    .card.hi{border-left:6px solid var(--pri)}
+    .stat{display:flex;justify-content:space-between;gap:10px;align-items:flex-start}
+    .stat .k{font-size:11px;font-weight:900;color:var(--muted);letter-spacing:.12em;text-transform:uppercase}
+    .stat .v{font-size:22px;font-weight:1000;margin-top:6px}
+    .stat .s{font-size:11px;font-weight:800;color:#94a3b8}
+    .chip{display:inline-flex;gap:6px;align-items:center;padding:4px 8px;border-radius:999px;font-weight:900;font-size:11px;border:1px solid var(--line);background:var(--soft);color:var(--ink)}
+    .chip.ok{background:#dcfce7;border-color:#bbf7d0;color:#166534}
+    .chip.wait{background:#fee2e2;border-color:#fecaca;color:#991b1b}
+    .row{display:flex;gap:10px;flex-wrap:wrap;align-items:end}
+    label{display:block;font-weight:900;color:var(--muted);font-size:12px;margin:0 0 6px 2px}
+    input,select,textarea{width:100%;padding:10px 12px;border-radius:12px;border:1px solid var(--line);background:#fff;font-weight:800;outline:none}
+    textarea{min-height:90px;resize:vertical}
+    input:focus,select:focus,textarea:focus{border-color:#93c5fd;box-shadow:0 0 0 3px rgba(147,197,253,.35)}
+    table{width:100%;border-collapse:separate;border-spacing:0;border:1px solid var(--line);border-radius:14px;overflow:hidden}
+    th,td{padding:10px 10px;border-bottom:1px solid var(--line);font-size:13px}
+    th{background:var(--soft);text-align:left;color:#475569;font-weight:1000}
+    tr:last-child td{border-bottom:none}
+    .tdr{text-align:right}
+    .muted{color:var(--muted)}
+    .hr{height:1px;background:var(--line);margin:12px 0}
+    .hint{font-size:12px;font-weight:800;color:#64748b;line-height:1.5}
+    .warnbox{background:#fff7ed;border:1px solid #fed7aa;color:#9a3412;padding:10px 12px;border-radius:14px;font-weight:900}
+    .okbox{background:#ecfeff;border:1px solid #a5f3fc;color:#155e75;padding:10px 12px;border-radius:14px;font-weight:900}
+    .pillbar{display:flex;gap:8px;flex-wrap:wrap}
+    .pill{background:#fff;border:1px solid var(--line);border-radius:999px;padding:8px 10px;font-weight:1000;cursor:pointer}
+    .pill.active{background:var(--pri);color:#fff;border-color:var(--pri)}
+    .no-print{}
+    @media print{
+      .no-print{display:none !important}
+      body{background:#fff;-webkit-print-color-adjust:exact;print-color-adjust:exact}
+      .main{padding:0}
+      .card{border:none;border-radius:0}
+      table{border:1px solid #cbd5e1}
+      th{background:#f1f5f9 !important}
+    }
   </style>
 </head>
-
-<body class="text-slate-900">
-  <div id="root">
-    <!-- Loader fallback (will be replaced when app mounts) -->
-    <div class="h-screen flex flex-col items-center justify-center bg-[#0f172a] text-white">
-      <div class="animate-spin rounded-full h-16 w-16 border-t-4 border-blue-500 mb-6 shadow-2xl"></div>
-      <h1 class="text-2xl font-black tracking-widest uppercase animate-pulse">กำลังโหลดระบบ BKP...</h1>
-      <p class="text-slate-400 text-sm mt-4">ถ้าค้างนานเกิน 10 วินาที กดรีเฟรช (Cmd+Shift+R)</p>
+<body>
+<div class="app">
+  <aside class="sidebar no-print">
+    <div class="brand">
+      <div class="logo">BKP</div>
+      <div>
+        <h1>ระบบบริหารครัวกลาง</h1>
+        <small>v3-A Core + Migration</small>
+      </div>
     </div>
-  </div>
+    <div class="navgrp">
+      <div class="navttl">ภาพรวม</div>
+      <div class="nav" id="nav"></div>
+    </div>
+    <div class="navgrp">
+      <div class="navttl">เครื่องมือข้อมูล</div>
+      <div class="card" style="background:rgba(255,255,255,.05);border-color:rgba(255,255,255,.08)">
+        <div class="hint" style="color:rgba(255,255,255,.75)">
+          ✅ ระบบจะดึงข้อมูลเวอร์ชัน 1 อัตโนมัติครั้งแรก<br>
+          ✅ ข้อมูลเดิมจะไม่ถูกลบ<br>
+          ⚠️ ถ้าต้องย้ายเครื่อง: ใช้ “ส่งออกข้อมูล”
+        </div>
+        <div class="hr" style="background:rgba(255,255,255,.12)"></div>
+        <button class="btn ghost" style="width:100%" onclick="Actions.exportDB()">ส่งออกข้อมูล (JSON)</button>
+        <div style="height:8px"></div>
+        <button class="btn ghost" style="width:100%" onclick="Actions.importDB()">นำเข้าข้อมูล (JSON)</button>
+      </div>
+    </div>
+  </aside>
+
+  <main class="main">
+    <div class="topbar no-print">
+      <div>
+        <h2 id="title">กำลังโหลดระบบ…</h2>
+        <div class="sub" id="subtitle">โปรดรอสักครู่</div>
+      </div>
+      <div class="right">
+        <button class="btn ghost" onclick="Actions.print()">พิมพ์ / PDF</button>
+        <button class="btn ok" onclick="Actions.backupHint()">วิธีสำรองเร็ว</button>
+      </div>
+    </div>
+    <div id="root"></div>
+  </main>
+</div>
 
 <script>
-(function () {
-  // -----------------------------
-  // Utilities (Back-office logic in single file)
-  // -----------------------------
-  const LS = {
-    get(key, fallback) {
-      try {
-        const raw = localStorage.getItem(key);
-        if (raw === null || raw === undefined || raw === "") return fallback;
-        return JSON.parse(raw);
-      } catch (e) {
-        console.warn("LS.get parse fail:", key, e);
-        return fallback;
-      }
-    },
-    set(key, value) {
-      try { localStorage.setItem(key, JSON.stringify(value)); }
-      catch (e) { console.warn("LS.set fail:", key, e); }
-    }
-  };
+/* =========================================================
+   BKP ERP v3-A Core + Migration
+   - เป้าหมาย: ใช้งานได้ทันที, ข้อมูล v1 ไม่หาย, ฟังก์ชัน core ครบ
+   - หมายเหตุ: เอกสาร PDF ใช้ window.print() (มาตรฐานสุด + รองรับทุกเครื่อง)
+========================================================= */
 
-  const fmtMoney = (n) => {
-    const v = Number(n || 0);
-    return v.toLocaleString(undefined, { maximumFractionDigits: 2 });
-  };
+/* ---------- 0) Helpers ---------- */
+const $$ = (sel, el=document) => el.querySelector(sel);
+const $$$ = (sel, el=document) => Array.from(el.querySelectorAll(sel));
+const fmtMoney = (n) => "฿" + (Number(n)||0).toLocaleString(undefined,{maximumFractionDigits:2});
+const fmtInt = (n) => (Number(n)||0).toLocaleString();
+const iso = (d=new Date()) => new Date(d).toISOString().split("T")[0];
+const uid = () => Date.now().toString(36) + Math.random().toString(36).slice(2,8);
+const safeJSON = (v) => { try{ return JSON.parse(v) }catch{ return null } };
+const isObj = (x) => x && typeof x === "object" && !Array.isArray(x);
 
-  const toDateISO = (d) => new Date(d).toISOString().split("T")[0];
+/* ---------- 1) Storage Keys (รองรับ v1 ที่คาดเดาไม่ได้) ---------- */
+const V3_KEY = "BKP_ERP_V3A_DB";
+const MIG_FLAG = "BKP_ERP_V3A_MIGRATED_ONCE";
 
-  const sum = (arr) => arr.reduce((s, x) => s + (Number(x) || 0), 0);
-
-  const uid = () => String(Date.now()) + "_" + Math.random().toString(16).slice(2);
-
-  // -----------------------------
-  // Keys + Initial Master Data
-  // -----------------------------
-  const KEYS = {
-    PRODS: "bkp_prods_th",
-    COSTS: "bkp_costs_th",
-    SHARES: "bkp_shares_th",
-    INVS: "bkp_invs_th",
-    EXPS: "bkp_exps_th"
-  };
-
-  const INITIAL = {
-    PRODUCTS: [
-      { id: "p1", name: "น้ำยำปลาร้า", rmCost: 50.79, price: 160, color: "#f43f5e" },
-      { id: "p2", name: "ซอสผัดไทย", rmCost: 59.27, price: 150, color: "#f59e0b" },
-      { id: "p3", name: "น้ำจิ้มแจ่ว", rmCost: 79.32, price: 140, color: "#10b981" },
-      { id: "p4", name: "ซอสหมักไก่", rmCost: 105.55, price: 160, color: "#3b82f6" },
-      { id: "p5", name: "น้ำส้มตำ", rmCost: 74.72, price: 120, color: "#8b5cf6" }
-    ],
-    SHAREHOLDERS: [
-      { id: "s1", name: "บี", percent: 50, color: "#3b82f6" },
-      { id: "s2", name: "กล้วย", percent: 25, color: "#10b981" },
-      { id: "s3", name: "เป้", percent: 25, color: "#f59e0b" }
-    ],
-    OP_COSTS: { labor: 15, accounting: 8, electricity: 1, cleaning: 0, depreciation: 2, gas: 4 }
-  };
-
-  // -----------------------------
-  // Error overlay to avoid "loading stuck silently"
-  // -----------------------------
-  function showFatal(err) {
-    console.error(err);
-    const root = document.getElementById("root");
-    if (!root) return;
-    root.innerHTML = `
-      <div class="min-h-screen p-6 bg-[#0f172a] text-white">
-        <div class="max-w-3xl mx-auto">
-          <h1 class="text-2xl font-black mb-2">เกิดข้อผิดพลาด ทำให้ระบบไม่สามารถเริ่มได้</h1>
-          <p class="text-slate-300 mb-4">เปิด DevTools → Console เพื่อดูรายละเอียด (หรือส่งรูปให้ฉันดูได้)</p>
-          <div class="bg-white/5 border border-white/10 rounded-2xl p-4 mono text-sm overflow-auto">
-            ${String(err && (err.stack || err.message || err)).replace(/</g,"&lt;")}
-          </div>
-          <div class="mt-6 flex gap-2">
-            <button class="px-4 py-2 rounded-xl bg-blue-600 font-bold" onclick="location.reload()">รีเฟรช</button>
-            <button class="px-4 py-2 rounded-xl bg-slate-700 font-bold" onclick="localStorage.clear();location.reload()">ล้างข้อมูลในเครื่องแล้วเริ่มใหม่</button>
-          </div>
-        </div>
-      </div>`;
+/* ---------- 2) Schema v3-A ---------- */
+const EMPTY = {
+  meta:{
+    schema:"v3-A",
+    createdAt: new Date().toISOString(),
+    migratedFromV1:false,
+    migrationNotes:[],
+  },
+  customers:[],     // {id,name,phone?,note?,createdAt}
+  products:[],      // {id,name,price, cost:{rm,hidden,op,other}, active, createdAt}
+  sales:[],         // {id,date,customerId,items:[{productId,qty,priceAtSale,costAtSale}], total, paid, status}
+  expenses:[],      // {id,date,category,amount,note}
+  po:[],            // {id,date,supplier,items:[{name,qty,unit,price}], total, paidAmount, status, note}
+  settings:{
+    expenseCategories:["ค่าแรง","ค่าทำบัญชี","ค่าไฟ","ค่าส่ง","ค่าวัตถุดิบ","อื่นๆ"]
   }
+};
 
-  try {
-    // -----------------------------
-    // React setup (NO BABEL / NO JSX)
-    // -----------------------------
-    const { useEffect, useMemo, useRef, useState } = React;
-    const h = React.createElement;
+/* ---------- 3) Load v3 ---------- */
+function loadV3(){
+  const raw = safeJSON(localStorage.getItem(V3_KEY));
+  if(raw && raw.meta?.schema==="v3-A") return raw;
+  return structuredClone(EMPTY);
+}
+let DB = loadV3();
+function save(){ localStorage.setItem(V3_KEY, JSON.stringify(DB)); }
 
-    // -----------------------------
-    // Reusable Components
-    // -----------------------------
-    function Icon({ name, className }) {
-      return h("i", { "data-lucide": name, className: className || "w-5 h-5" });
+/* ---------- 4) MIGRATION from v1 (auto-detect, no delete) ---------- */
+function normalizeNumber(x){
+  const n = Number(x);
+  return Number.isFinite(n) ? n : 0;
+}
+function guessDate(x){
+  if(!x) return iso();
+  const d = new Date(x);
+  return isNaN(d.getTime()) ? iso() : iso(d);
+}
+function ensureCustomerByName(name){
+  if(!name) return null;
+  const nm = String(name).trim();
+  if(!nm) return null;
+  let c = DB.customers.find(x => x.name === nm);
+  if(!c){
+    c = {id:uid(), name:nm, createdAt:new Date().toISOString()};
+    DB.customers.push(c);
+  }
+  return c;
+}
+function ensureProductByNameMaybe(pname, priceHint=null, rmCostHint=null){
+  const nm = (pname?String(pname).trim():"");
+  if(!nm) return null;
+  let p = DB.products.find(x => x.name === nm);
+  if(!p){
+    const price = normalizeNumber(priceHint);
+    const rm = normalizeNumber(rmCostHint);
+    p = {
+      id:uid(),
+      name:nm,
+      price: price || 0,
+      cost:{rm: rm||0, hidden:0, op:0, other:0},
+      active:true,
+      createdAt:new Date().toISOString()
+    };
+    DB.products.push(p);
+  }
+  return p;
+}
+
+function scoreArray(arr){
+  // ให้คะแนนว่า array นี้ "น่าจะเป็นข้อมูลธุรกิจ" แค่ไหน
+  // เราดู key ที่พบบ่อยใน object แต่ละตัว
+  if(!Array.isArray(arr) || arr.length<1) return 0;
+  let score=0;
+  for(const it of arr.slice(0, Math.min(30,arr.length))){
+    if(!isObj(it)) continue;
+    const keys = Object.keys(it).map(k=>k.toLowerCase());
+    const has = (k) => keys.includes(k);
+    if(keys.includes("customername")||has("customer")||has("cust")||has("ลูกค้า")) score += 3;
+    if(has("total")||has("amount")||has("ยอด")||has("price")||has("rmcost")||has("cost")) score += 2;
+    if(has("date")||has("วันที่")) score += 1;
+    if(has("items")||has("product")||has("สินค้า")||has("qty")) score += 2;
+  }
+  return score;
+}
+
+function collectCandidateArraysFromLocalStorage(){
+  const arrays=[];
+  for(let i=0;i<localStorage.length;i++){
+    const key = localStorage.key(i);
+    if(key===V3_KEY || key===MIG_FLAG) continue;
+    const val = localStorage.getItem(key);
+    const parsed = safeJSON(val);
+    if(!parsed) continue;
+
+    if(Array.isArray(parsed)){
+      arrays.push({key,arr:parsed,score:scoreArray(parsed)});
+      continue;
     }
-
-    function NavItem({ active, onClick, icon, label }) {
-      return h("button", {
-        onClick,
-        className:
-          "w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-all " +
-          (active
-            ? "sidebar-active text-white"
-            : "text-slate-400 hover:bg-white/5 hover:text-slate-200")
-      }, h(Icon, { name: icon, className: "w-5 h-5" }),
-         h("span", { className: "text-sm font-bold" }, label));
-    }
-
-    function StatCard({ label, value, color, icon, sub, bg }) {
-      return h("div", { className: `p-6 rounded-3xl border border-slate-200 glass-card shadow-sm ${bg || "bg-white"}` }, [
-        h("div", { className: "flex justify-between items-center mb-4", key: "h" }, [
-          h("p", { className: "text-[10px] font-black text-slate-400 uppercase tracking-widest", key:"l" }, label),
-          h("div", { className: "p-2 bg-slate-50 rounded-xl text-slate-300", key:"i" }, h(Icon, { name: icon, className: "w-4 h-4" }))
-        ]),
-        h("h3", { className: `text-2xl font-black ${color} tracking-tight`, key:"v" }, "฿" + fmtMoney(value)),
-        h("p", { className: "text-[9px] font-bold text-slate-300 uppercase mt-1", key:"s" }, sub || "")
-      ]);
-    }
-
-    // Chart component (Trend)
-    function SalesChart({ labels, values }) {
-      const canvasRef = useRef(null);
-      const chartRef = useRef(null);
-
-      useEffect(() => {
-        if (!window.Chart || !canvasRef.current) return;
-        if (chartRef.current) chartRef.current.destroy();
-
-        const ctx = canvasRef.current.getContext("2d");
-        chartRef.current = new Chart(ctx, {
-          type: "line",
-          data: {
-            labels,
-            datasets: [{
-              label: "ยอดขาย",
-              data: values,
-              tension: 0.35,
-              borderWidth: 3,
-              pointRadius: 3,
-              fill: true
-            }]
-          },
-          options: {
-            responsive: true,
-            maintainAspectRatio: false,
-            plugins: {
-              legend: { display: false },
-              tooltip: { enabled: true }
-            },
-            scales: {
-              x: { grid: { display: false }, ticks: { font: { size: 10 } } },
-              y: { grid: { display: false }, ticks: { display: false } }
-            }
-          }
-        });
-
-        return () => { if (chartRef.current) chartRef.current.destroy(); };
-      }, [labels.join("|"), values.join("|")]);
-
-      return h("div", { className: "h-[250px]" }, h("canvas", { ref: canvasRef }));
-    }
-
-    // -----------------------------
-    // App
-    // -----------------------------
-    function App() {
-      const [activeTab, setActiveTab] = useState("dashboard");
-
-      // Load from localStorage (or initial)
-      const [products, setProducts] = useState(() => LS.get(KEYS.PRODS, INITIAL.PRODUCTS));
-      const [opCosts, setOpCosts] = useState(() => LS.get(KEYS.COSTS, INITIAL.OP_COSTS));
-      const [shareholders, setShareholders] = useState(() => LS.get(KEYS.SHARES, INITIAL.SHAREHOLDERS));
-      const [invoices, setInvoices] = useState(() => LS.get(KEYS.INVS, []));
-      const [expenses, setExpenses] = useState(() => LS.get(KEYS.EXPS, []));
-
-      const [reportRange, setReportRange] = useState(() => ({
-        start: toDateISO(new Date(new Date().getFullYear(), new Date().getMonth(), 1)),
-        end: toDateISO(new Date())
-      }));
-
-      // Persist
-      useEffect(() => { LS.set(KEYS.PRODS, products); }, [products]);
-      useEffect(() => { LS.set(KEYS.COSTS, opCosts); }, [opCosts]);
-      useEffect(() => { LS.set(KEYS.SHARES, shareholders); }, [shareholders]);
-      useEffect(() => { LS.set(KEYS.INVS, invoices); }, [invoices]);
-      useEffect(() => { LS.set(KEYS.EXPS, expenses); }, [expenses]);
-
-      // Refresh lucide icons
-      useEffect(() => { if (window.lucide) window.lucide.createIcons(); }, [activeTab, products.length, shareholders.length]);
-
-      const opRate = useMemo(() => {
-        const vals = Object.values(opCosts || {}).map(v => Number(v) || 0);
-        return sum(vals);
-      }, [opCosts]);
-
-      const analysis = useMemo(() => {
-        const start = new Date(reportRange.start);
-        const end = new Date(reportRange.end);
-        end.setHours(23, 59, 59, 999);
-
-        const filteredInv = (invoices || []).filter(i => {
-          const d = new Date(i.date);
-          return d >= start && d <= end;
-        });
-
-        const filteredExp = (expenses || []).filter(e => {
-          const d = new Date(e.date);
-          return d >= start && d <= end;
-        });
-
-        let rev = 0, kg = 0, paid = 0;
-        const prodMap = {};
-
-        for (const inv of filteredInv) {
-          const total = Number(inv.total || 0);
-          rev += total;
-          paid += Number(inv.paidAmount || 0);
-
-          const items = inv.items || {};
-          for (const pid of Object.keys(items)) {
-            const qty = Number(items[pid] || 0);
-            if (qty <= 0) continue;
-            kg += qty;
-
-            if (!prodMap[pid]) prodMap[pid] = { qty: 0, rev: 0, profit: 0 };
-
-            const p = products.find(x => x.id === pid);
-            if (!p) continue;
-
-            const costPerKg = (Number(p.rmCost || 0) + opRate);
-            prodMap[pid].qty += qty;
-            prodMap[pid].rev += qty * Number(p.price || 0);
-            prodMap[pid].profit += qty * (Number(p.price || 0) - costPerKg);
-          }
+    if(isObj(parsed)){
+      for(const [k,v] of Object.entries(parsed)){
+        if(Array.isArray(v)){
+          arrays.push({key:`${key}.${k}`, arr:v, score:scoreArray(v)});
         }
+      }
+    }
+  }
+  arrays.sort((a,b)=>b.score-a.score);
+  return arrays;
+}
 
-        const expenseTotal = filteredExp.reduce((s, e) => s + (Number(e.amount) || 0), 0);
-        const profit = Object.values(prodMap).reduce((s, v) => s + (Number(v.profit) || 0), 0);
+function migrateV1Once(){
+  const done = localStorage.getItem(MIG_FLAG);
+  if(done) return; // กัน migrate ซ้ำ
+  const candidates = collectCandidateArraysFromLocalStorage();
 
-        return {
-          rev, kg, paid,
-          receivable: rev - paid,
-          profit,
-          prodMap,
-          expenseTotal,
-          invCount: filteredInv.length
-        };
-      }, [invoices, expenses, products, reportRange, opRate]);
+  const notes=[];
+  let imported= {customers:0, products:0, sales:0, expenses:0};
+  const before = {
+    customers: DB.customers.length,
+    products: DB.products.length,
+    sales: DB.sales.length,
+    expenses: DB.expenses.length
+  };
 
-      const latest10 = useMemo(() => {
-        const arr = (invoices || []).slice().sort((a,b) => new Date(a.date) - new Date(b.date));
-        const last = arr.slice(-10);
-        return {
-          labels: last.map(x => x.date),
-          values: last.map(x => Number(x.total || 0))
-        };
-      }, [invoices]);
+  // heuristic mapping: เราพยายามอ่านได้หลายรูปแบบ รวมทั้งรูปแบบจากโค้ด v1 ที่คุณเคยส่ง
+  for(const c of candidates){
+    const arr=c.arr;
+    if(!Array.isArray(arr) || arr.length<1 || c.score<3) continue;
 
-      const forecast30 = useMemo(() => {
-        const days = Math.max(1, analysis.invCount);
-        const avgPerBill = analysis.rev / days;
-        return avgPerBill * 30;
-      }, [analysis.rev, analysis.invCount]);
-
-      const exportCSV = () => {
-        let csv = `รายงาน BKP Kitchen\nระยะเวลา: ${reportRange.start} ถึง ${reportRange.end}\n\n`;
-        csv += "สินค้า,จำนวน(กก.),ยอดขาย,กำไรสุทธิ\n";
-        Object.entries(analysis.prodMap).forEach(([id, v]) => {
-          const name = (products.find(p => p.id === id) || {}).name || id;
-          csv += `${name},${Number(v.qty||0)},${Number(v.rev||0)},${Number(v.profit||0)}\n`;
-        });
-        csv += `\nกำไรสุทธิรวม,${analysis.profit}\n\nส่วนแบ่งกำไร\n`;
-        (shareholders || []).forEach(sh => {
-          const share = analysis.profit * (Number(sh.percent||0)/100);
-          csv += `${sh.name},${sh.percent}%,${share.toFixed(2)}\n`;
-        });
-
-        const blob = new Blob(["\uFEFF" + csv], { type: "text/csv;charset=utf-8;" });
-        const link = document.createElement("a");
-        link.href = URL.createObjectURL(blob);
-        link.download = `BKP_Report_${reportRange.start}_to_${reportRange.end}.csv`;
-        link.click();
+    for(const it of arr){
+      if(!isObj(it)) continue;
+      const keys = Object.keys(it);
+      const lowerKeys = keys.map(k=>k.toLowerCase());
+      const get = (...names) => {
+        for(const n of names){
+          const idx = lowerKeys.indexOf(String(n).toLowerCase());
+          if(idx>=0) return it[keys[idx]];
+        }
+        return undefined;
       };
 
-      // -----------------------------
-      // Pages (Tabs)
-      // -----------------------------
-      function Dashboard() {
-        return h("div", { className:"space-y-8 animate-in" }, [
-          h("header", { className:"flex justify-between items-end border-l-4 border-blue-600 pl-4", key:"hd" }, [
-            h("div", { key:"l" }, [
-              h("h2", { className:"text-2xl font-black text-slate-800" }, "ภาพรวมธุรกิจ"),
-              h("p", { className:"text-slate-400 text-sm" }, "สถานะการเงินและการขายล่าสุด")
-            ]),
-            h("div", { className:"no-print bg-white p-2 px-4 rounded-xl border shadow-sm text-xs font-bold text-slate-500 flex items-center gap-2", key:"r" }, [
-              h(Icon, { name:"calendar", className:"w-3 h-3 text-blue-500" }),
-              new Date().toLocaleDateString("th-TH")
-            ])
-          ]),
-
-          h("div", { className:"grid grid-cols-1 md:grid-cols-4 gap-4", key:"cards" }, [
-            h(StatCard, { label:"เงินสดรับจริง", value:analysis.paid, color:"text-green-600", icon:"banknote", sub:"เข้ากระเป๋าแล้ว", key:"c1" }),
-            h(StatCard, { label:"ยอดขายรวม", value:analysis.rev, color:"text-slate-900", icon:"trending-up", sub:"รวมบิลทั้งหมด", key:"c2" }),
-            h(StatCard, { label:"ลูกหนี้ค้างชำระ", value:analysis.receivable, color:"text-red-500", icon:"alert-circle", sub:"รอเก็บเงิน", key:"c3" }),
-            h(StatCard, { label:"กำไรสุทธิ", value:analysis.profit, color:"text-blue-600", icon:"dollar-sign", sub:"หักต้นทุนผลิตต่อกก.", bg:"bg-blue-50/50", key:"c4" })
-          ]),
-
-          h("div", { className:"grid grid-cols-1 lg:grid-cols-3 gap-6", key:"charts" }, [
-            h("div", { className:"lg:col-span-2 glass-card p-6 rounded-3xl shadow-sm h-[350px]", key:"ch1" }, [
-              h("h3", { className:"font-bold text-slate-800 mb-4 flex items-center gap-2" }, [
-                h(Icon, { name:"bar-chart-2", className:"w-4 h-4" }),
-                "แนวโน้มยอดขาย (10 รายการล่าสุด)"
-              ]),
-              h(SalesChart, { labels: latest10.labels, values: latest10.values })
-            ]),
-
-            h("div", { className:"bg-[#0f172a] p-8 rounded-3xl text-white relative overflow-hidden flex flex-col justify-center shadow-lg", key:"ch2" }, [
-              h("p", { className:"text-blue-400 font-bold text-xs uppercase mb-2" }, "พยากรณ์รายรับ (30 วัน)"),
-              h("h4", { className:"text-4xl font-black mb-4" }, "฿" + Number(forecast30||0).toLocaleString(undefined,{maximumFractionDigits:0})),
-              h("p", { className:"text-slate-400 text-xs" }, "คำนวณจากยอดขายในช่วงรายงานปัจจุบัน")
-            ])
-          ])
-        ]);
+      // --- Customer detection ---
+      // กรณีเป็น object ลูกค้าล้วน (name/phone/note)
+      const nameCandidate = get("customerName","customer","cust","name","ชื่อลูกค้า","ลูกค้า","ชื่อ");
+      const maybePhone = get("phone","tel","มือถือ","เบอร์");
+      const maybeNote = get("note","remark","รายละเอียด","หมายเหตุ");
+      if(nameCandidate && (typeof nameCandidate==="string" || typeof nameCandidate==="number")){
+        // ถ้า object มีเฉพาะข้อมูลคล้ายลูกค้า -> import เป็น customer
+        if(lowerKeys.includes("phone") || lowerKeys.includes("tel") || lowerKeys.includes("note") || lowerKeys.includes("remark") || lowerKeys.includes("มือถือ") || lowerKeys.includes("เบอร์")){
+          const nm=String(nameCandidate).trim();
+          const exists = DB.customers.find(x=>x.name===nm);
+          if(!exists){
+            DB.customers.push({id:uid(),name:nm,phone:maybePhone?String(maybePhone):"",note:maybeNote?String(maybeNote):"",createdAt:new Date().toISOString()});
+          }
+        }
       }
 
-      function Report() {
-        const rows = Object.entries(analysis.prodMap);
-
-        return h("div", { className:"space-y-6 animate-in" }, [
-          h("div", { className:"glass-card p-6 rounded-3xl no-print flex gap-4 shadow-sm items-end", key:"filters" }, [
-            h("div", { className:"grid grid-cols-2 gap-4 flex-1" }, [
-              h("div", {}, [
-                h("label", { className:"text-xs font-bold text-slate-500" }, "เริ่มวันที่"),
-                h("input", {
-                  type:"date",
-                  value: reportRange.start,
-                  onChange: (e) => setReportRange({ ...reportRange, start: e.target.value }),
-                  className:"input-premium"
-                })
-              ]),
-              h("div", {}, [
-                h("label", { className:"text-xs font-bold text-slate-500" }, "ถึงวันที่"),
-                h("input", {
-                  type:"date",
-                  value: reportRange.end,
-                  onChange: (e) => setReportRange({ ...reportRange, end: e.target.value }),
-                  className:"input-premium"
-                })
-              ])
-            ]),
-            h("div", { className:"flex gap-2" }, [
-              h("button", { onClick: exportCSV, className:"bg-green-600 text-white px-4 py-3 rounded-xl font-bold flex items-center gap-2 hover:bg-green-700 text-sm" },
-                [h(Icon,{name:"download",className:"w-4 h-4"}), "CSV"]
-              ),
-              h("button", { onClick: () => window.print(), className:"bg-slate-900 text-white px-4 py-3 rounded-xl font-bold flex items-center gap-2 hover:scale-105 text-sm" },
-                [h(Icon,{name:"printer",className:"w-4 h-4"}), "พิมพ์"]
-              )
-            ])
-          ]),
-
-          h("div", { className:"bg-white p-10 rounded-3xl shadow-lg min-h-[800px] print:shadow-none print:border-none", key:"paper" }, [
-            h("div", { className:"flex justify-between items-start mb-10 border-b-4 border-blue-600 pb-8" }, [
-              h("div", {}, [
-                h("h1", { className:"text-3xl font-black text-slate-900" }, "รายงานผลประกอบการ"),
-                h("p", { className:"text-blue-600 font-bold" }, "ครัวกลาง BKP Partnership"),
-                h("p", { className:"text-xs text-slate-500 mt-1" }, `ช่วงวันที่: ${reportRange.start} ถึง ${reportRange.end}`)
-              ]),
-              h("div", { className:"text-right" }, [
-                h("p", { className:"text-xs font-bold text-slate-400" }, "กำไรสุทธิปันผล"),
-                h("h2", { className:"text-4xl font-black text-slate-900" }, "฿" + fmtMoney(analysis.profit))
-              ])
-            ]),
-
-            h("table", { className:"w-full text-left text-sm mb-12" }, [
-              h("thead", {}, h("tr", { className:"bg-slate-50 border-y-2 border-slate-200 text-slate-500" }, [
-                h("th", { className:"p-4" }, "รายการสินค้า"),
-                h("th", { className:"p-4 text-center" }, "จำนวน (กก.)"),
-                h("th", { className:"p-4 text-right" }, "ยอดขาย"),
-                h("th", { className:"p-4 text-right text-blue-600" }, "กำไร")
-              ])),
-              h("tbody", {}, rows.map(([pid, val]) => {
-                const p = products.find(x => x.id === pid);
-                return h("tr", { key: pid, className:"border-b" }, [
-                  h("td", { className:"p-4 font-bold" }, p ? p.name : pid),
-                  h("td", { className:"p-4 text-center" }, Number(val.qty||0).toLocaleString()),
-                  h("td", { className:"p-4 text-right" }, "฿" + fmtMoney(val.rev)),
-                  h("td", { className:"p-4 text-right font-bold text-green-600" }, "฿" + fmtMoney(val.profit))
-                ]);
-              }))
-            ]),
-
-            h("h3", { className:"font-bold text-slate-800 mb-6 border-l-4 border-blue-600 pl-3" }, "ส่วนแบ่งกำไรผู้ถือหุ้น"),
-            h("div", { className:"grid grid-cols-1 md:grid-cols-3 gap-4 mb-20 text-center" },
-              (shareholders || []).map((sh) => {
-                const amt = analysis.profit * (Number(sh.percent||0)/100);
-                return h("div", { key: sh.id, className:"p-6 border rounded-2xl bg-slate-50" }, [
-                  h("p", { className:"text-sm font-bold text-slate-500 mb-2" }, `${sh.name} (${sh.percent}%)`),
-                  h("p", { className:"text-2xl font-black", style:{ color: sh.color } }, "฿" + amt.toLocaleString(undefined,{minimumFractionDigits:2, maximumFractionDigits:2}))
-                ]);
-              })
-            )
-          ])
-        ]);
+      // --- Product detection ---
+      // v1 อาจเก็บ products: {id,name,rmCost,price,...}
+      const prodName = get("product","productName","name","สินค้า");
+      const price = get("price","salePrice","ราคาขาย");
+      const rmCost = get("rmCost","rm","cost","ทุน","ต้นทุน","ทุนวัตถุดิบ");
+      if(prodName && (price!==undefined || rmCost!==undefined) && (lowerKeys.includes("price") || lowerKeys.includes("rmcost") || lowerKeys.includes("rm") || lowerKeys.includes("cost") || lowerKeys.includes("ทุน") || lowerKeys.includes("ต้นทุน"))){
+        ensureProductByNameMaybe(prodName, price, rmCost);
       }
 
-      function Settlement() {
-        return h("div", { className:"max-w-4xl mx-auto space-y-6 animate-in" }, [
-          h("h2", { className:"text-2xl font-black text-slate-800" }, "สรุปยอดโอนค่าแรง (Settlement)"),
-          h("div", { className:"glass-card p-8 rounded-3xl shadow-lg" }, [
-            h("div", { className:"grid grid-cols-1 lg:grid-cols-2 gap-8" }, [
-              h("div", { className:"bg-blue-600 p-8 rounded-3xl text-white shadow-lg text-center flex flex-col justify-center" }, [
-                h("p", { className:"text-blue-100 text-sm font-bold mb-2" }, "น้ำหนักผลิตรวม (Kg)"),
-                h("h2", { className:"text-6xl font-black mb-6" }, Number(analysis.kg||0).toLocaleString()),
-                h("div", { className:"pt-6 border-t border-white/20" }, [
-                  h("p", { className:"text-sm mb-1" }, "ยอดโอนจ่ายรวม"),
-                  h("h4", { className:"text-3xl font-black" }, "฿" + fmtMoney((Number(analysis.kg||0) * opRate)))
-                ])
-              ]),
-              h("div", { className:"space-y-3" },
-                Object.entries(opCosts || {}).map(([k,v]) => h("div", { key:k, className:"flex justify-between p-4 bg-white border rounded-2xl shadow-sm" }, [
-                  h("div", {}, [
-                    h("p", { className:"font-bold text-sm uppercase" }, k),
-                    h("p", { className:"text-xs text-slate-400" }, `${Number(analysis.kg||0).toLocaleString()} Kg x ${Number(v||0)}`)
-                  ]),
-                  h("p", { className:"font-black text-lg" }, "฿" + fmtMoney(Number(analysis.kg||0) * Number(v||0)))
-                ]))
-              )
-            ])
-          ])
-        ]);
-      }
-
-      function Watchdog() {
-        return h("div", { className:"space-y-6 animate-in" }, [
-          h("h2", { className:"text-2xl font-black text-slate-800 border-l-4 border-red-500 pl-3" }, "Margin Watchdog"),
-          h("div", { className:"grid grid-cols-1 md:grid-cols-3 gap-6" },
-            (products || []).map(p => {
-              const price = Number(p.price||0);
-              const cost = Number(p.rmCost||0) + opRate;
-              const margin = price > 0 ? ((price - cost)/price)*100 : 0;
-              const isLow = margin < 15;
-              return h("div", {
-                key:p.id,
-                className: `p-6 rounded-3xl border-2 transition-all ${isLow ? "bg-red-50 border-red-500" : "bg-white border-slate-100"}`
-              }, [
-                h("div", { className:"flex justify-between items-start mb-4" }, [
-                  h("h4", { className:"font-bold text-lg" }, p.name),
-                  isLow ? h(Icon, { name:"alert-triangle", className:"text-red-600 w-6 h-6" }) : null
-                ]),
-                h("p", { className:`text-4xl font-black ${isLow ? "text-red-600":"text-slate-900"}` }, margin.toFixed(1) + "%"),
-                h("p", { className:"text-xs font-bold text-slate-400 mt-2" }, `กำไรต่อกก. ≈ ฿${fmtMoney(price - cost)} (รวมทุนแฝง/กก. = ฿${fmtMoney(opRate)})`)
-              ]);
-            })
-          )
-        ]);
-      }
-
-      function RecordSale() {
-        const [date, setDate] = useState(toDateISO(new Date()));
-        const [cust, setCust] = useState("");
-        const [items, setItems] = useState(() => {
-          const obj = {};
-          (products || []).forEach(p => obj[p.id] = 0);
-          return obj;
-        });
-
-        useEffect(() => {
-          // if products changed, re-sync item keys without losing existing values
-          setItems(prev => {
-            const next = { ...prev };
-            (products || []).forEach(p => { if (next[p.id] === undefined) next[p.id] = 0; });
-            Object.keys(next).forEach(k => { if (!(products || []).some(p => p.id === k)) delete next[k]; });
-            return next;
+      // --- Expense detection ---
+      // v1 expenses: {id,date,amount,note} หรือ {date,amount,note}
+      const amt = get("amount","amt","value","ยอด","จำนวนเงิน");
+      const expDate = get("date","วันที่");
+      const note = get("note","รายละเอียด","remark");
+      const cat = get("category","type","หมวด","รายการ");
+      if(amt!==undefined && !get("total","ยอดบิล") && (lowerKeys.includes("amount")||lowerKeys.includes("amt")||lowerKeys.includes("ยอด")||lowerKeys.includes("จำนวนเงิน"))){
+        // ถ้า object ดูเป็นรายจ่าย
+        const amount = normalizeNumber(amt);
+        if(amount>0 && (note || cat || lowerKeys.includes("note") || lowerKeys.includes("remark") || lowerKeys.includes("category") || lowerKeys.includes("type"))){
+          DB.expenses.push({
+            id:uid(),
+            date:guessDate(expDate),
+            category: (cat?String(cat):"อื่นๆ"),
+            amount,
+            note: note?String(note):""
           });
-        }, [products]);
+        }
+      }
 
-        const total = useMemo(() => {
-          let t = 0;
-          for (const p of (products || [])) {
-            const q = Number(items[p.id] || 0);
-            t += q * Number(p.price || 0);
+      // --- Sales detection (ใบขาย) ---
+      // v1 invoices: {id,date,total,items,customerName,status,paidAmount}
+      const total = get("total","ยอดรวม","ยอดบิล");
+      const paidAmount = get("paidAmount","paid","รับเงิน","รับชำระ");
+      const items = get("items","products","รายการ");
+      const custName2 = get("customerName","customer","ชื่อลูกค้า","ลูกค้า");
+
+      const looksLikeSale = (total!==undefined && custName2!==undefined) || (isObj(items) && total!==undefined);
+      if(looksLikeSale){
+        const t = normalizeNumber(total);
+        if(t>0){
+          const cust = ensureCustomerByName(custName2||"ลูกค้าทั่วไป");
+          // แปลง items จาก object {pid:qty} แบบ v1 หรือ array
+          let newItems=[];
+          if(isObj(items)){
+            for(const [pid,qty] of Object.entries(items)){
+              // pid อาจเป็น id เดิม (p1,p2...) → เราจะหาใน product list v1 ที่ migrate แล้ว ถ้าไม่เจอ สร้าง placeholder
+              let p = DB.products.find(x=>x.id===pid);
+              if(!p){
+                // ถ้าใน v1 pid เป็นรหัสและไม่มีชื่อ เราสร้างชื่อ placeholder
+                p = {id:pid, name:`สินค้า(${pid})`, price:0, cost:{rm:0,hidden:0,op:0,other:0}, active:true, createdAt:new Date().toISOString()};
+                // กันชน id ซ้ำ
+                if(!DB.products.find(x=>x.id===pid)) DB.products.push(p);
+              }
+              const q = normalizeNumber(qty);
+              if(q>0){
+                const priceAt = normalizeNumber(p.price);
+                const costAt = normalizeNumber(p.cost?.rm)+normalizeNumber(p.cost?.hidden)+normalizeNumber(p.cost?.op)+normalizeNumber(p.cost?.other);
+                newItems.push({productId:p.id, qty:q, priceAtSale:priceAt, costAtSale:costAt});
+              }
+            }
+          }else if(Array.isArray(items)){
+            for(const it2 of items){
+              if(!isObj(it2)) continue;
+              const nm = it2.name || it2.product || it2.productName;
+              const q = normalizeNumber(it2.qty||it2.quantity||it2.amount||1);
+              const pr = normalizeNumber(it2.price||it2.unitPrice||0);
+              const rm = normalizeNumber(it2.rmCost||it2.cost||0);
+              const p = ensureProductByNameMaybe(nm||"สินค้า", pr, rm);
+              if(p && q>0){
+                const costAt = normalizeNumber(p.cost.rm)+normalizeNumber(p.cost.hidden)+normalizeNumber(p.cost.op)+normalizeNumber(p.cost.other);
+                newItems.push({productId:p.id, qty:q, priceAtSale: pr||p.price, costAtSale: costAt});
+              }
+            }
           }
-          return t;
-        }, [items, products]);
 
-        const save = () => {
-          if (!cust.trim()) return alert("กรุณากรอกชื่อลูกค้า");
-          if (total <= 0) return alert("กรุณาใส่จำนวนสินค้าอย่างน้อย 1 รายการ");
-
-          // compact items
-          const compact = {};
-          for (const k of Object.keys(items)) {
-            const q = Number(items[k] || 0);
-            if (q > 0) compact[k] = q;
-          }
-
-          const inv = {
-            id: uid(),
-            date,
-            customerName: cust.trim(),
-            items: compact,
-            total,
-            status: "Unpaid",
-            paidAmount: 0
-          };
-
-          setInvoices([inv, ...(invoices || [])]);
-          setActiveTab("dashboard");
-        };
-
-        return h("div", { className:"max-w-xl mx-auto space-y-6 animate-in" }, [
-          h("h2", { className:"text-2xl font-black text-slate-800 border-l-4 border-blue-600 pl-4" }, "ออกใบแจ้งหนี้ (Sale)"),
-          h("div", { className:"glass-card p-8 rounded-3xl shadow-xl space-y-6" }, [
-            h("div", { className:"grid grid-cols-2 gap-4" }, [
-              h("div", {}, [
-                h("label", { className:"text-xs font-bold text-slate-400 ml-2" }, "วันที่"),
-                h("input", { type:"date", value: date, onChange: e=>setDate(e.target.value), className:"input-premium" })
-              ]),
-              h("div", {}, [
-                h("label", { className:"text-xs font-bold text-slate-400 ml-2" }, "ลูกค้า"),
-                h("input", { value: cust, onChange: e=>setCust(e.target.value), className:"input-premium", placeholder:"ชื่อลูกค้า..." })
-              ])
-            ]),
-
-            h("div", { className:"space-y-3 max-h-[300px] overflow-y-auto no-scrollbar" },
-              (products || []).map(p => h("div", {
-                key:p.id,
-                className:"flex items-center gap-4 p-4 bg-white rounded-2xl border hover:border-blue-500 transition-all"
-              }, [
-                h("div", { className:"flex-1 font-bold" }, [
-                  p.name,
-                  h("span", { className:"text-xs text-slate-400 ml-2" }, `@${p.price}`)
-                ]),
-                h("div", { className:"w-28 relative" }, [
-                  h("input", {
-                    type:"number",
-                    min:"0",
-                    step:"0.01",
-                    value: items[p.id] || 0,
-                    onChange: e => setItems({ ...items, [p.id]: e.target.value }),
-                    className:"w-full p-2 bg-slate-50 rounded-xl text-right font-bold outline-none"
-                  }),
-                  h("span", { className:"absolute right-2 top-1.5 text-xs text-slate-400" }, "Kg")
-                ])
-              ]))
-            ),
-
-            h("div", { className:"flex items-center justify-between bg-slate-50 border rounded-2xl p-4" }, [
-              h("div", { className:"text-xs font-bold text-slate-500" }, "รวมยอดบิล"),
-              h("div", { className:"text-xl font-black text-slate-900" }, "฿" + fmtMoney(total))
-            ]),
-
-            h("button", {
-              onClick: save,
-              className:"w-full bg-blue-600 text-white font-black py-4 rounded-2xl shadow-lg hover:scale-105 transition-all text-lg"
-            }, "บันทึกบิล")
-          ])
-        ]);
+          const paid = normalizeNumber(paidAmount);
+          const status = paid>=t ? "รับครบ" : (paid>0 ? "รับบางส่วน" : "ค้างรับ");
+          DB.sales.push({
+            id:uid(),
+            date: guessDate(get("date","วันที่")),
+            customerId: cust?cust.id:null,
+            items:newItems,
+            total:t,
+            paid,
+            status
+          });
+        }
       }
-
-      function History() {
-        const receiveMoney = (invId) => {
-          const inv = (invoices || []).find(x => x.id === invId);
-          if (!inv) return;
-
-          const amtStr = prompt("ยอดรับชำระ:");
-          if (!amtStr) return;
-          const amt = Number(amtStr);
-          if (Number.isNaN(amt) || amt <= 0) return alert("ยอดไม่ถูกต้อง");
-
-          setInvoices((invoices || []).map(i => {
-            if (i.id !== invId) return i;
-            const newPaid = Number(i.paidAmount || 0) + amt;
-            const status =
-              newPaid >= Number(i.total || 0) ? "Paid" :
-              newPaid > 0 ? "Partial" : "Unpaid";
-            return { ...i, paidAmount: newPaid, status };
-          }));
-        };
-
-        return h("div", { className:"space-y-6 animate-in" }, [
-          h("h2", { className:"text-2xl font-black text-slate-800" }, "ประวัติและลูกหนี้ (History)"),
-          h("div", { className:"space-y-3" },
-            (invoices || []).map(inv => {
-              const status = inv.status || "Unpaid";
-              const isPaid = status === "Paid";
-              const badge =
-                isPaid ? "bg-green-100 text-green-700" :
-                status === "Partial" ? "bg-amber-100 text-amber-700" :
-                "bg-red-100 text-red-700";
-
-              return h("div", { key: inv.id, className:"bg-white p-5 rounded-3xl border flex items-center justify-between shadow-sm" }, [
-                h("div", { className:"flex gap-4 items-center" }, [
-                  h("div", { className:"bg-slate-100 p-3 rounded-2xl text-center min-w-[70px] font-black text-slate-600" }, [
-                    h("p", { className:"text-[10px] uppercase" }, new Date(inv.date).toLocaleDateString("th-TH",{month:"short"})),
-                    h("p", { className:"text-2xl leading-none" }, new Date(inv.date).getDate())
-                  ]),
-                  h("div", {}, [
-                    h("h4", { className:"font-bold text-lg text-slate-800" }, inv.customerName || "-"),
-                    h("span", { className:`text-[10px] px-2 py-1 rounded-md font-bold ${badge}` },
-                      isPaid ? "จ่ายแล้ว" : status === "Partial" ? "จ่ายบางส่วน" : "ค้างชำระ"
-                    ),
-                    h("p", { className:"text-xs text-slate-400 mt-1" },
-                      `รับแล้ว ฿${fmtMoney(inv.paidAmount)} / ทั้งหมด ฿${fmtMoney(inv.total)}`
-                    )
-                  ])
-                ]),
-                h("div", { className:"text-right flex items-center gap-4" }, [
-                  h("div", {}, [
-                    h("p", { className:"text-xs text-slate-400 font-bold" }, "ยอดบิล"),
-                    h("p", { className:"font-black text-xl" }, "฿" + fmtMoney(inv.total))
-                  ]),
-                  !isPaid ? h("button", {
-                    onClick: () => receiveMoney(inv.id),
-                    className:"bg-emerald-500 text-white px-4 py-2 rounded-xl font-bold shadow-md text-xs"
-                  }, "รับเงิน") : null
-                ])
-              ]);
-            })
-          )
-        ]);
-      }
-
-      function Expense() {
-        const [date, setDate] = useState(toDateISO(new Date()));
-        const [amt, setAmt] = useState("");
-        const [note, setNote] = useState("");
-
-        const save = () => {
-          const a = Number(amt);
-          if (Number.isNaN(a) || a <= 0) return alert("กรุณาใส่ยอดรายจ่ายให้ถูกต้อง");
-          setExpenses([...(expenses || []), { id: uid(), date, amount: a, note: note || "" }]);
-          setActiveTab("dashboard");
-        };
-
-        return h("div", { className:"max-w-xl mx-auto space-y-6 animate-in py-10" }, [
-          h("div", { className:"glass-card p-8 rounded-3xl shadow-lg" }, [
-            h("h2", { className:"text-xl font-black text-red-600 mb-6 flex items-center gap-2" }, [
-              h(Icon, { name:"wallet" }), "บันทึกรายจ่าย"
-            ]),
-            h("div", { className:"grid grid-cols-2 gap-4 mb-4" }, [
-              h("div", {}, [
-                h("label", { className:"text-xs font-bold text-slate-500" }, "วันที่"),
-                h("input", { type:"date", value: date, onChange:e=>setDate(e.target.value), className:"input-premium" })
-              ]),
-              h("div", {}, [
-                h("label", { className:"text-xs font-bold text-slate-500" }, "ยอดเงิน"),
-                h("input", { type:"number", value: amt, onChange:e=>setAmt(e.target.value), className:"input-premium text-red-600 font-black text-xl", placeholder:"0.00" })
-              ])
-            ]),
-            h("textarea", { value: note, onChange:e=>setNote(e.target.value), className:"input-premium h-24 mb-4", placeholder:"รายละเอียดค่าใช้จ่าย..." }),
-            h("button", { onClick: save, className:"w-full bg-red-600 text-white font-black py-4 rounded-2xl shadow-lg hover:bg-red-700 transition-all" }, "บันทึก")
-          ])
-        ]);
-      }
-
-      function Settings() {
-        const totalPercent = (shareholders || []).reduce((s,h) => s + (Number(h.percent)||0), 0);
-
-        const updateProd = (idx, patch) => {
-          const next = (products || []).slice();
-          next[idx] = { ...next[idx], ...patch };
-          setProducts(next);
-        };
-
-        const updateShare = (idx, patch) => {
-          const next = (shareholders || []).slice();
-          next[idx] = { ...next[idx], ...patch };
-          setShareholders(next);
-        };
-
-        return h("div", { className:"space-y-10 animate-in max-w-4xl mx-auto pb-20" }, [
-          h("section", { key:"p" }, [
-            h("h3", { className:"text-lg font-black text-slate-800 mb-4 border-l-4 border-blue-600 pl-3" }, "ตั้งค่าสินค้า (Products)"),
-            h("div", { className:"space-y-3" },
-              (products || []).map((p, idx) => h("div", { key:p.id, className:"bg-white p-4 rounded-2xl border flex items-center gap-4 shadow-sm" }, [
-                h("div", { className:"w-10 h-10 rounded-xl flex items-center justify-center text-white font-bold", style:{ backgroundColor: p.color } }, p.id.replace("p","")),
-                h("div", { className:"flex-1 font-bold text-slate-700" }, p.name),
-                h("div", { className:"flex gap-2" }, [
-                  h("div", { className:"w-28" }, [
-                    h("label", { className:"text-[9px] font-bold text-slate-400 block text-center" }, "ทุน RM"),
-                    h("input", {
-                      type:"number",
-                      value: p.rmCost,
-                      onChange: e => updateProd(idx, { rmCost: Number(e.target.value||0) }),
-                      className:"w-full p-2 bg-slate-50 rounded-xl font-bold text-center"
-                    })
-                  ]),
-                  h("div", { className:"w-28" }, [
-                    h("label", { className:"text-[9px] font-bold text-slate-400 block text-center" }, "ราคาขาย"),
-                    h("input", {
-                      type:"number",
-                      value: p.price,
-                      onChange: e => updateProd(idx, { price: Number(e.target.value||0) }),
-                      className:"w-full p-2 bg-slate-50 rounded-xl font-bold text-center text-blue-600"
-                    })
-                  ])
-                ])
-              ]))
-            )
-          ]),
-
-          h("section", { key:"s" }, [
-            h("div", { className:"flex justify-between items-center mb-4 border-l-4 border-emerald-500 pl-3" }, [
-              h("h3", { className:"text-lg font-black text-slate-800" }, "ผู้ถือหุ้น (Shareholders)"),
-              h("button", {
-                onClick: () => setShareholders([...(shareholders||[]), { id: uid(), name:"เพิ่มใหม่", percent: 0, color:"#94a3b8" }]),
-                className:"bg-slate-900 text-white px-3 py-1 rounded-lg text-xs font-bold"
-              }, "+ เพิ่ม")
-            ]),
-
-            h("div", { className:"space-y-3" },
-              (shareholders || []).map((sh, idx) => h("div", { key: sh.id, className:"bg-white p-4 rounded-2xl border flex items-center gap-4 shadow-sm" }, [
-                h("div", { className:"w-8 h-8 rounded-full", style:{ backgroundColor: sh.color } }),
-                h("div", { className:"flex-1 font-bold" },
-                  h("input", {
-                    value: sh.name,
-                    onChange: e => updateShare(idx, { name: e.target.value }),
-                    className:"bg-transparent border-none outline-none w-full"
-                  })
-                ),
-                h("div", { className:"w-24" },
-                  h("input", {
-                    type:"number",
-                    value: sh.percent,
-                    onChange: e => updateShare(idx, { percent: Number(e.target.value||0) }),
-                    className:"w-full p-2 bg-slate-50 rounded-xl font-bold text-center text-emerald-600"
-                  })
-                ),
-                h("button", {
-                  onClick: () => setShareholders((shareholders||[]).filter((_,i)=>i!==idx)),
-                  className:"text-red-400"
-                }, h(Icon, { name:"trash-2", className:"w-5 h-5" }))
-              ]))
-            ),
-
-            h("div", {
-              className: `text-center text-xs font-bold mt-2 ${totalPercent===100 ? "text-green-600" : "text-red-600"}`
-            }, `รวมเปอร์เซ็นต์: ${totalPercent}% (ต้องครบ 100)`)
-          ])
-        ]);
-      }
-
-      // -----------------------------
-      // Layout
-      // -----------------------------
-      return h("div", { className:"flex flex-col md:flex-row min-h-screen" }, [
-        // Sidebar
-        h("nav", { className:"w-full md:w-72 bg-[#0f172a] p-6 flex flex-col no-print shrink-0 border-r border-white/5 shadow-2xl" }, [
-          h("div", { className:"flex items-center gap-4 mb-10 px-2" }, [
-            h("div", { className:"bg-blue-600 p-3 rounded-2xl text-white shadow-xl shadow-blue-500/20" }, h(Icon, { name:"cooking-pot", className:"w-6 h-6" })),
-            h("div", {}, [
-              h("h1", { className:"text-white font-bold text-xl tracking-tight" }, "BKP SYSTEM"),
-              h("span", { className:"text-blue-400 text-[10px] font-bold" }, "ครัวกลางมืออาชีพ")
-            ])
-          ]),
-
-          h("div", { className:"flex-1 space-y-1 overflow-y-auto no-scrollbar" }, [
-            h(NavItem, { active: activeTab==="dashboard", onClick:()=>setActiveTab("dashboard"), icon:"layout-dashboard", label:"หน้าหลัก (Dashboard)", key:"n1" }),
-            h(NavItem, { active: activeTab==="report", onClick:()=>setActiveTab("report"), icon:"file-text", label:"รายงานผู้ถือหุ้น", key:"n2" }),
-            h(NavItem, { active: activeTab==="settlement", onClick:()=>setActiveTab("settlement"), icon:"calculator", label:"ยอดโอนค่าแรงผลิต", key:"n3" }),
-            h(NavItem, { active: activeTab==="watchdog", onClick:()=>setActiveTab("watchdog"), icon:"shield-alert", label:"เฝ้าระวังกำไร", key:"n4" }),
-
-            h("div", { className:"pt-6 pb-2 px-4 text-[10px] text-slate-500 font-bold uppercase tracking-widest" }, "การทำงาน"),
-            h(NavItem, { active: activeTab==="record", onClick:()=>setActiveTab("record"), icon:"shopping-cart", label:"ออกบิลใหม่", key:"n5" }),
-            h(NavItem, { active: activeTab==="history", onClick:()=>setActiveTab("history"), icon:"history", label:"ประวัติลูกหนี้", key:"n6" }),
-            h(NavItem, { active: activeTab==="expense", onClick:()=>setActiveTab("expense"), icon:"wallet", label:"บันทึกรายจ่าย", key:"n7" }),
-
-            h("div", { className:"pt-6 pb-2 px-4 text-[10px] text-slate-500 font-bold uppercase tracking-widest" }, "ตั้งค่า"),
-            h(NavItem, { active: activeTab==="settings", onClick:()=>setActiveTab("settings"), icon:"settings", label:"จัดการหุ้น & สินค้า", key:"n8" })
-          ])
-        ]),
-
-        // Main
-        h("main", { className:"flex-1 p-4 md:p-8 overflow-y-auto" }, [
-          activeTab==="dashboard" ? h(Dashboard) :
-          activeTab==="report" ? h(Report) :
-          activeTab==="settlement" ? h(Settlement) :
-          activeTab==="watchdog" ? h(Watchdog) :
-          activeTab==="record" ? h(RecordSale) :
-          activeTab==="history" ? h(History) :
-          activeTab==="expense" ? h(Expense) :
-          activeTab==="settings" ? h(Settings) :
-          h("div", { className:"p-6 bg-white rounded-3xl" }, "ไม่พบหน้า")
-        ])
-      ]);
     }
 
-    // Mount
-    const root = ReactDOM.createRoot(document.getElementById("root"));
-    root.render(h(App));
-
-    // If still on loader after 12s, show hint
-    setTimeout(() => {
-      // if root still contains loader text
-      const t = document.body.innerText || "";
-      if (t.includes("กำลังโหลดระบบ BKP")) {
-        showFatal("App ยังไม่เริ่ม render (อาจโหลด CDN ไม่ครบ หรือโดนบล็อก). ลอง Cmd+Shift+R และดู Console.");
-      }
-    }, 12000);
-
-  } catch (err) {
-    showFatal(err);
+    notes.push(`นำเข้าจาก ${c.key} (score=${c.score})`);
   }
+
+  // de-dup basic: customers by name
+  DB.customers = DB.customers.filter((c,idx,arr)=>idx===arr.findIndex(x=>x.name===c.name));
+
+  const after = {
+    customers: DB.customers.length,
+    products: DB.products.length,
+    sales: DB.sales.length,
+    expenses: DB.expenses.length
+  };
+  imported.customers = after.customers - before.customers;
+  imported.products  = after.products  - before.products;
+  imported.sales     = after.sales     - before.sales;
+  imported.expenses  = after.expenses  - before.expenses;
+
+  DB.meta.migratedFromV1 = true;
+  DB.meta.migrationNotes = [
+    ...DB.meta.migrationNotes,
+    `MIGRATE@${new Date().toISOString()} customers+${imported.customers}, products+${imported.products}, sales+${imported.sales}, expenses+${imported.expenses}`,
+    ...notes.slice(0,8)
+  ];
+
+  save();
+  localStorage.setItem(MIG_FLAG, "1");
+}
+
+/* ---------- 5) Core Calculations ---------- */
+function productCost(p){
+  if(!p) return 0;
+  const c = p.cost||{};
+  return normalizeNumber(c.rm)+normalizeNumber(c.hidden)+normalizeNumber(c.op)+normalizeNumber(c.other);
+}
+function saleGrossProfit(sale){
+  let gp=0;
+  for(const it of (sale.items||[])){
+    const pr = normalizeNumber(it.priceAtSale);
+    const cost = normalizeNumber(it.costAtSale);
+    gp += normalizeNumber(it.qty) * (pr - cost);
+  }
+  // ถ้าไม่มี items ให้ใช้ total เป็น revenue (profit จะใช้ expense แทนในระดับรวม)
+  return gp;
+}
+function inRange(dateISO, startISO, endISO){
+  const d = new Date(dateISO).getTime();
+  const s = new Date(startISO).getTime();
+  const e = new Date(endISO).getTime();
+  return d>=s && d<=e;
+}
+function sumSales(start,end){
+  const xs = DB.sales.filter(x=>inRange(x.date,start,end));
+  return {
+    list: xs,
+    revenue: xs.reduce((a,b)=>a+normalizeNumber(b.total),0),
+    paid: xs.reduce((a,b)=>a+normalizeNumber(b.paid),0),
+    receivable: xs.reduce((a,b)=>a+(normalizeNumber(b.total)-normalizeNumber(b.paid)),0),
+    grossProfit: xs.reduce((a,b)=>a+saleGrossProfit(b),0),
+  };
+}
+function sumExpenses(start,end){
+  const xs = DB.expenses.filter(x=>inRange(x.date,start,end));
+  const total = xs.reduce((a,b)=>a+normalizeNumber(b.amount),0);
+  return {list:xs,total};
+}
+
+/* ---------- 6) UI Framework (Vanilla Render) ---------- */
+const Pages = {};
+let STATE = {
+  page:"dash",
+  range:{ start: iso(new Date(new Date().getFullYear(), new Date().getMonth(), 1)), end: iso() },
+  filters:{ expenseCat:"ทั้งหมด" }
+};
+
+const NAV_ITEMS = [
+  {id:"dash", label:"แดชบอร์ด", group:"ภาพรวม"},
+  {id:"customers", label:"ลูกค้า", group:"ภาพรวม"},
+  {id:"products", label:"สินค้า & ต้นทุน", group:"ภาพรวม"},
+  {id:"sales", label:"ขาย / รับเงิน", group:"ภาพรวม"},
+  {id:"expenses", label:"ค่าใช้จ่าย / ใบเบิก", group:"ภาพรวม"},
+  {id:"reports", label:"รายงานช่วงเวลา", group:"ภาพรวม"},
+];
+
+function renderNav(){
+  const nav = $$("#nav");
+  nav.innerHTML = NAV_ITEMS.map(it=>`
+    <button class="${STATE.page===it.id?'active':''}" onclick="Actions.go('${it.id}')">
+      <span class="dot"></span><span>${it.label}</span>
+    </button>
+  `).join("");
+}
+
+function setHeader(title, subtitle){
+  $$("#title").textContent = title;
+  $$("#subtitle").textContent = subtitle;
+}
+
+function render(){
+  renderNav();
+  const root = $$("#root");
+  root.innerHTML = "";
+  const fn = Pages[STATE.page] || Pages.dash;
+  root.appendChild(fn());
+}
+
+/* ---------- 7) Actions ---------- */
+const Actions = {
+  go(p){ STATE.page=p; render(); },
+  print(){ window.print(); },
+  backupHint(){
+    alert("สำรองข้อมูลแบบเร็ว:\n\n1) เปิด Console\n2) พิมพ์: copy(localStorage)\n3) วางเก็บไว้ในไฟล์ .txt\n\nหรือใช้ปุ่ม 'ส่งออกข้อมูล (JSON)' ในเมนูซ้าย");
+  },
+  exportDB(){
+    const blob = new Blob([JSON.stringify(DB,null,2)], {type:"application/json;charset=utf-8"});
+    const a = document.createElement("a");
+    a.href = URL.createObjectURL(blob);
+    a.download = `BKP_ERP_v3A_backup_${iso()}.json`;
+    a.click();
+  },
+  importDB(){
+    const inp = document.createElement("input");
+    inp.type="file"; inp.accept="application/json";
+    inp.onchange = async () => {
+      const f = inp.files?.[0];
+      if(!f) return;
+      const text = await f.text();
+      const obj = safeJSON(text);
+      if(!obj || obj.meta?.schema!=="v3-A"){
+        alert("ไฟล์ไม่ถูกต้อง (ต้องเป็น backup ของ v3-A)");
+        return;
+      }
+      DB = obj;
+      save();
+      alert("นำเข้าข้อมูลสำเร็จ");
+      render();
+    };
+    inp.click();
+  },
+  addCustomer(payload){
+    const name = (payload.name||"").trim();
+    if(!name) return alert("กรุณากรอกชื่อลูกค้า");
+    if(DB.customers.find(c=>c.name===name)) return alert("มีชื่อลูกค้านี้แล้ว");
+    DB.customers.unshift({id:uid(),name,phone:(payload.phone||"").trim(),note:(payload.note||"").trim(),createdAt:new Date().toISOString()});
+    save(); render();
+  },
+  addProduct(payload){
+    const name=(payload.name||"").trim();
+    if(!name) return alert("กรุณากรอกชื่อสินค้า");
+    const price=normalizeNumber(payload.price);
+    const rm=normalizeNumber(payload.rm);
+    const hidden=normalizeNumber(payload.hidden);
+    const op=normalizeNumber(payload.op);
+    const other=normalizeNumber(payload.other);
+    DB.products.unshift({
+      id:uid(), name, price,
+      cost:{rm,hidden,op,other},
+      active:true,
+      createdAt:new Date().toISOString()
+    });
+    save(); render();
+  },
+  toggleProduct(id){
+    const p=DB.products.find(x=>x.id===id);
+    if(!p) return;
+    p.active = !p.active;
+    save(); render();
+  },
+  addSale(payload){
+    const date=payload.date||iso();
+    const customerId=payload.customerId||null;
+    if(!customerId) return alert("กรุณาเลือกลูกค้า");
+    const items=payload.items||[];
+    if(items.length<1) return alert("กรุณาเลือกสินค้าอย่างน้อย 1 รายการ");
+    let total=0;
+    const mapped=[];
+    for(const it of items){
+      const p=DB.products.find(x=>x.id===it.productId);
+      if(!p) continue;
+      const qty=normalizeNumber(it.qty);
+      if(qty<=0) continue;
+      const priceAt = normalizeNumber(it.priceAtSale ?? p.price);
+      const costAt = productCost(p);
+      mapped.push({productId:p.id, qty, priceAtSale:priceAt, costAtSale:costAt});
+      total += qty * priceAt;
+    }
+    if(mapped.length<1 || total<=0) return alert("รายการขายไม่สมบูรณ์");
+    DB.sales.unshift({
+      id:uid(), date, customerId,
+      items:mapped,
+      total, paid:0,
+      status:"ค้างรับ"
+    });
+    save(); render();
+  },
+  receivePayment(saleId){
+    const s=DB.sales.find(x=>x.id===saleId);
+    if(!s) return;
+    const remain = normalizeNumber(s.total)-normalizeNumber(s.paid);
+    const amtStr = prompt(`ยอดรับชำระ (ค้าง ${fmtMoney(remain)}):`);
+    if(amtStr===null) return;
+    const amt = normalizeNumber(amtStr);
+    if(amt<=0) return alert("ยอดไม่ถูกต้อง");
+    s.paid = normalizeNumber(s.paid)+amt;
+    if(s.paid>=s.total) { s.paid=s.total; s.status="รับครบ"; }
+    else s.status="รับบางส่วน";
+    save(); render();
+  },
+  addExpense(payload){
+    const date=payload.date||iso();
+    const category=(payload.category||"อื่นๆ").trim()||"อื่นๆ";
+    const amount=normalizeNumber(payload.amount);
+    const note=(payload.note||"").trim();
+    if(amount<=0) return alert("กรุณาระบุจำนวนเงิน");
+    DB.expenses.unshift({id:uid(),date,category,amount,note});
+    save(); render();
+  },
+  setRange(start,end){
+    STATE.range={start,end};
+    render();
+  }
+};
+
+/* ---------- 8) Pages ---------- */
+Pages.dash = () => {
+  setHeader("แดชบอร์ด", "ภาพรวมยอดขาย-รับเงิน-ค่าใช้จ่าย (ปรับช่วงเวลาได้ที่หน้า ‘รายงานช่วงเวลา’)");
+  const start=STATE.range.start, end=STATE.range.end;
+  const s = sumSales(start,end);
+  const e = sumExpenses(start,end);
+  const net = s.revenue - e.total;
+
+  // customer behavior (top)
+  const custMap = {};
+  for(const sale of s.list){
+    const cid = sale.customerId || "unknown";
+    custMap[cid] = custMap[cid] || {revenue:0,count:0,receivable:0};
+    custMap[cid].revenue += normalizeNumber(sale.total);
+    custMap[cid].count += 1;
+    custMap[cid].receivable += (normalizeNumber(sale.total)-normalizeNumber(sale.paid));
+  }
+  const topCustomers = Object.entries(custMap)
+    .map(([cid,v])=>{
+      const c = DB.customers.find(x=>x.id===cid);
+      return {cid, name:c?c.name:"(ไม่ระบุลูกค้า)", ...v};
+    })
+    .sort((a,b)=>b.revenue-a.revenue)
+    .slice(0,8);
+
+  const wrap = document.createElement("div");
+  wrap.className = "grid";
+  wrap.innerHTML = `
+    <div class="grid g4">
+      <div class="card hi"><div class="stat">
+        <div><div class="k">ยอดขายรวม</div><div class="v">${fmtMoney(s.revenue)}</div><div class="s">ช่วง ${start} ถึง ${end}</div></div>
+        <div class="chip">รายได้</div>
+      </div></div>
+      <div class="card"><div class="stat">
+        <div><div class="k">รับเงินแล้ว</div><div class="v">${fmtMoney(s.paid)}</div><div class="s">เข้ากระเป๋าแล้ว</div></div>
+        <div class="chip ok">Cash In</div>
+      </div></div>
+      <div class="card"><div class="stat">
+        <div><div class="k">ลูกหนี้ค้างรับ</div><div class="v">${fmtMoney(s.receivable)}</div><div class="s">รอเก็บเงิน</div></div>
+        <div class="chip wait">A/R</div>
+      </div></div>
+      <div class="card"><div class="stat">
+        <div><div class="k">กำไรสุทธิ</div><div class="v">${fmtMoney(net)}</div><div class="s">ยอดขาย - ค่าใช้จ่าย</div></div>
+        <div class="chip">NET</div>
+      </div></div>
+    </div>
+
+    <div class="card">
+      <div class="row" style="justify-content:space-between;align-items:center">
+        <div>
+          <h3 style="margin:0">พฤติกรรมลูกค้า (Top)</h3>
+          <div class="hint">ดูยอดซื้อ / จำนวนบิล / ลูกหนี้ค้างรับรายคน</div>
+        </div>
+        <div class="pillbar no-print">
+          <button class="btn ghost" onclick="Actions.go('reports')">ไปหน้า “รายงานช่วงเวลา”</button>
+        </div>
+      </div>
+      <div class="hr"></div>
+      <table>
+        <thead><tr>
+          <th>ลูกค้า</th><th class="tdr">ยอดซื้อ</th><th class="tdr">จำนวนบิล</th><th class="tdr">ค้างรับ</th>
+        </tr></thead>
+        <tbody>
+          ${
+            topCustomers.length? topCustomers.map(x=>`
+              <tr>
+                <td><b>${x.name}</b></td>
+                <td class="tdr">${fmtMoney(x.revenue)}</td>
+                <td class="tdr">${fmtInt(x.count)}</td>
+                <td class="tdr">${fmtMoney(x.receivable)}</td>
+              </tr>
+            `).join("") : `<tr><td colspan="4" class="muted">ยังไม่มีข้อมูลในช่วงเวลานี้</td></tr>`
+          }
+        </tbody>
+      </table>
+    </div>
+
+    <div class="card">
+      <h3 style="margin:0">สถานะการย้ายข้อมูล</h3>
+      <div class="hr"></div>
+      <div class="${DB.meta.migratedFromV1?'okbox':'warnbox'}">
+        ${DB.meta.migratedFromV1
+          ? "✅ ระบบได้พยายามดึงข้อมูลจากเวอร์ชัน 1 แล้ว (อ่านอย่างเดียว ไม่ลบข้อมูลเดิม)"
+          : "⚠️ ยังไม่พบข้อมูลเวอร์ชัน 1 หรือยังไม่ได้ migrate (ถ้าคุณมีข้อมูลเดิมจริง ให้ลองเปิดด้วยเบราว์เซอร์เดิมที่เคยใช้)"
+        }
+      </div>
+      <div class="hint" style="margin-top:10px">
+        บันทึก: <br>
+        ${ (DB.meta.migrationNotes||[]).slice(-6).map(n=>`• ${n}`).join("<br>") || "—" }
+      </div>
+    </div>
+  `;
+  return wrap;
+};
+
+Pages.customers = () => {
+  setHeader("ลูกค้า", "เพิ่มลูกค้า / เก็บฐานชื่อไว้เลือกในใบขาย");
+  const wrap=document.createElement("div");
+  wrap.className="grid";
+  wrap.innerHTML=`
+    <div class="card">
+      <h3 style="margin:0">เพิ่มลูกค้าใหม่</h3>
+      <div class="hr"></div>
+      <div class="grid g3">
+        <div><label>ชื่อลูกค้า</label><input id="c_name" placeholder="เช่น ร้าน A / คุณ B"></div>
+        <div><label>เบอร์โทร (ถ้ามี)</label><input id="c_phone" placeholder="0xx-xxx-xxxx"></div>
+        <div><label>หมายเหตุ</label><input id="c_note" placeholder="เงื่อนไขเครดิต/วันวางบิล"></div>
+      </div>
+      <div style="height:10px"></div>
+      <button class="btn pri" onclick="Actions.addCustomer({name:$$('#c_name').value,phone:$$('#c_phone').value,note:$$('#c_note').value})">บันทึก</button>
+    </div>
+
+    <div class="card">
+      <div class="row" style="justify-content:space-between;align-items:center">
+        <div>
+          <h3 style="margin:0">รายชื่อลูกค้า</h3>
+          <div class="hint">รวมทั้งลูกค้าที่ migrate มาจากเวอร์ชัน 1</div>
+        </div>
+        <div class="chip">${fmtInt(DB.customers.length)} ราย</div>
+      </div>
+      <div class="hr"></div>
+      <table>
+        <thead><tr><th>ลูกค้า</th><th>โทร</th><th>หมายเหตุ</th></tr></thead>
+        <tbody>
+          ${
+            DB.customers.length? DB.customers.map(c=>`
+              <tr>
+                <td><b>${c.name}</b></td>
+                <td>${c.phone||""}</td>
+                <td class="muted">${c.note||""}</td>
+              </tr>
+            `).join("") : `<tr><td colspan="3" class="muted">ยังไม่มีลูกค้า</td></tr>`
+          }
+        </tbody>
+      </table>
+    </div>
+  `;
+  return wrap;
+};
+
+Pages.products = () => {
+  setHeader("สินค้า & โครงสร้างต้นทุน", "ปรับทุนหลายชั้น + คำนวณกำไรต่อหน่วย");
+  const wrap=document.createElement("div");
+  wrap.className="grid";
+  wrap.innerHTML=`
+    <div class="card">
+      <h3 style="margin:0">เพิ่มสินค้า</h3>
+      <div class="hr"></div>
+      <div class="grid g3">
+        <div><label>ชื่อสินค้า</label><input id="p_name" placeholder="เช่น น้ำยำปลาร้า"></div>
+        <div><label>ราคาขาย/หน่วย</label><input id="p_price" type="number" placeholder="0"></div>
+        <div></div>
+        <div><label>ทุนวัตถุดิบ (RM)</label><input id="p_rm" type="number" placeholder="0"></div>
+        <div><label>ทุนแฝง</label><input id="p_hidden" type="number" placeholder="0"></div>
+        <div><label>ทุนดำเนินการ</label><input id="p_op" type="number" placeholder="0"></div>
+        <div><label>ทุนอื่น ๆ</label><input id="p_other" type="number" placeholder="0"></div>
+      </div>
+      <div style="height:10px"></div>
+      <button class="btn pri" onclick="Actions.addProduct({
+        name:$$('#p_name').value, price:$$('#p_price').value, rm:$$('#p_rm').value,
+        hidden:$$('#p_hidden').value, op:$$('#p_op').value, other:$$('#p_other').value
+      })">บันทึกสินค้า</button>
+      <div class="hint" style="margin-top:10px">* สินค้าที่ migrate มาจาก v1 อาจมีทุน/ราคาไม่ครบ คุณสามารถปรับได้ที่นี่</div>
+    </div>
+
+    <div class="card">
+      <div class="row" style="justify-content:space-between;align-items:center">
+        <div>
+          <h3 style="margin:0">รายการสินค้า</h3>
+          <div class="hint">คำนวณ ต้นทุนรวม = RM + แฝง + ดำเนินการ + อื่น ๆ</div>
+        </div>
+        <div class="chip">${fmtInt(DB.products.length)} รายการ</div>
+      </div>
+      <div class="hr"></div>
+      <table>
+        <thead>
+          <tr>
+            <th>สินค้า</th><th class="tdr">ราคา</th><th class="tdr">ต้นทุนรวม</th><th class="tdr">กำไร/หน่วย</th><th class="tdr">สถานะ</th>
+          </tr>
+        </thead>
+        <tbody>
+          ${
+            DB.products.length ? DB.products.map(p=>{
+              const cost=productCost(p);
+              const gp=normalizeNumber(p.price)-cost;
+              return `
+                <tr>
+                  <td><b>${p.name}</b></td>
+                  <td class="tdr">${fmtMoney(p.price)}</td>
+                  <td class="tdr">${fmtMoney(cost)}</td>
+                  <td class="tdr"><b>${fmtMoney(gp)}</b></td>
+                  <td class="tdr">
+                    <button class="btn ${p.active?'ok':'danger'}" onclick="Actions.toggleProduct('${p.id}')">${p.active?'ใช้งาน':'ปิดใช้งาน'}</button>
+                  </td>
+                </tr>
+              `;
+            }).join("")
+            : `<tr><td colspan="5" class="muted">ยังไม่มีสินค้า</td></tr>`
+          }
+        </tbody>
+      </table>
+    </div>
+  `;
+  return wrap;
+};
+
+Pages.sales = () => {
+  setHeader("ขาย / รับเงิน", "ออกบิลขาย (แบบง่าย) + รับชำระ + ติดตามลูกหนี้");
+  const activeProducts = DB.products.filter(p=>p.active);
+  const wrap=document.createElement("div");
+  wrap.className="grid";
+
+  const customerOptions = DB.customers.map(c=>`<option value="${c.id}">${c.name}</option>`).join("");
+  const productRows = activeProducts.map(p=>`
+    <tr>
+      <td><b>${p.name}</b><div class="muted" style="font-size:12px">ราคา: ${fmtMoney(p.price)} | ทุน: ${fmtMoney(productCost(p))}</div></td>
+      <td style="width:140px">
+        <input type="number" min="0" step="0.01" data-pid="${p.id}" class="saleqty" placeholder="0">
+      </td>
+      <td style="width:160px">
+        <input type="number" min="0" step="0.01" data-ppid="${p.id}" class="saleprice" placeholder="${p.price}">
+      </td>
+    </tr>
+  `).join("");
+
+  const rows = DB.sales.slice(0,60).map(s=>{
+    const c = DB.customers.find(x=>x.id===s.customerId);
+    const remain = normalizeNumber(s.total)-normalizeNumber(s.paid);
+    const chip = s.status==="รับครบ" ? "ok" : "wait";
+    return `
+      <tr>
+        <td>${s.date}</td>
+        <td><b>${c?c.name:"(ไม่ระบุลูกค้า)"}</b></td>
+        <td class="tdr">${fmtMoney(s.total)}</td>
+        <td class="tdr">${fmtMoney(s.paid)}</td>
+        <td class="tdr">${fmtMoney(remain)}</td>
+        <td class="tdr"><span class="chip ${chip}">${s.status}</span></td>
+        <td class="tdr">
+          ${s.status!=="รับครบ" ? `<button class="btn ok" onclick="Actions.receivePayment('${s.id}')">รับเงิน</button>` : `<span class="muted">—</span>`}
+        </td>
+      </tr>
+    `;
+  }).join("");
+
+  wrap.innerHTML=`
+    <div class="card">
+      <h3 style="margin:0">ออกบิลขายใหม่</h3>
+      <div class="hr"></div>
+      <div class="grid g3">
+        <div><label>วันที่</label><input id="s_date" type="date" value="${iso()}"></div>
+        <div><label>ลูกค้า</label><select id="s_cust"><option value="">— เลือกลูกค้า —</option>${customerOptions}</select></div>
+        <div class="hint">* ระบบจะดึงลูกค้าเดิม (จาก v1) มาให้เลือก</div>
+      </div>
+      <div style="height:10px"></div>
+      <table>
+        <thead><tr><th>สินค้า</th><th>จำนวน</th><th>ราคา/หน่วย (แก้ได้)</th></tr></thead>
+        <tbody>
+          ${activeProducts.length?productRows:`<tr><td colspan="3" class="muted">ยังไม่มีสินค้า (หรือถูกปิดใช้งาน)</td></tr>`}
+        </tbody>
+      </table>
+      <div style="height:10px"></div>
+      <button class="btn pri" onclick="(function(){
+        const items=[];
+        document.querySelectorAll('.saleqty').forEach(inp=>{
+          const qty=Number(inp.value)||0;
+          if(qty>0){
+            const pid=inp.getAttribute('data-pid');
+            const pinp=document.querySelector('.saleprice[data-ppid=\"'+pid+'\"]');
+            const priceAt=Number(pinp?.value)||0;
+            items.push({productId:pid,qty:qty,priceAtSale:priceAt});
+          }
+        });
+        Actions.addSale({date:document.getElementById('s_date').value, customerId:document.getElementById('s_cust').value, items});
+      })()">บันทึกบิล</button>
+    </div>
+
+    <div class="card">
+      <div class="row" style="justify-content:space-between;align-items:center">
+        <div>
+          <h3 style="margin:0">ประวัติขาย / ลูกหนี้</h3>
+          <div class="hint">แสดงล่าสุด 60 รายการ (พิมพ์/ทำ PDF ได้จากปุ่มบนสุด)</div>
+        </div>
+        <div class="chip">ทั้งหมด ${fmtInt(DB.sales.length)} บิล</div>
+      </div>
+      <div class="hr"></div>
+      <table>
+        <thead>
+          <tr><th>วันที่</th><th>ลูกค้า</th><th class="tdr">ยอดบิล</th><th class="tdr">รับแล้ว</th><th class="tdr">ค้างรับ</th><th class="tdr">สถานะ</th><th class="tdr">จัดการ</th></tr>
+        </thead>
+        <tbody>${DB.sales.length?rows:`<tr><td colspan="7" class="muted">ยังไม่มีบิล</td></tr>`}</tbody>
+      </table>
+    </div>
+  `;
+  return wrap;
+};
+
+Pages.expenses = () => {
+  setHeader("ค่าใช้จ่าย / ใบเบิก", "บันทึกรายจ่ายเป็นหมวด + ใช้ทำใบเบิกและรายงานช่วงเวลา");
+  const cats = ["ทั้งหมด", ...DB.settings.expenseCategories];
+  const wrap=document.createElement("div");
+  wrap.className="grid";
+
+  const catPills = cats.map(c=>`<div class="pill ${STATE.filters.expenseCat===c?'active':''}" onclick="(function(){STATE.filters.expenseCat='${c}';render();})()">${c}</div>`).join("");
+  const list = (STATE.filters.expenseCat==="ทั้งหมด")
+    ? DB.expenses
+    : DB.expenses.filter(x=>x.category===STATE.filters.expenseCat);
+
+  const rows = list.slice(0,80).map(e=>`
+    <tr><td>${e.date}</td><td><b>${e.category}</b></td><td class="tdr">${fmtMoney(e.amount)}</td><td class="muted">${e.note||""}</td></tr>
+  `).join("");
+
+  wrap.innerHTML=`
+    <div class="card">
+      <h3 style="margin:0">บันทึกรายจ่ายใหม่</h3>
+      <div class="hr"></div>
+      <div class="grid g3">
+        <div><label>วันที่</label><input id="e_date" type="date" value="${iso()}"></div>
+        <div><label>หมวด</label>
+          <select id="e_cat">${DB.settings.expenseCategories.map(c=>`<option value="${c}">${c}</option>`).join("")}</select>
+        </div>
+        <div><label>จำนวนเงิน</label><input id="e_amt" type="number" placeholder="0"></div>
+      </div>
+      <div style="height:8px"></div>
+      <div><label>รายละเอียด</label><textarea id="e_note" placeholder="เช่น ค่าไฟเดือน ม.ค., ค่าทำบัญชี, ค่าแรงผลิต"></textarea></div>
+      <div style="height:10px"></div>
+      <button class="btn pri" onclick="Actions.addExpense({
+        date:$$('#e_date').value, category:$$('#e_cat').value, amount:$$('#e_amt').value, note:$$('#e_note').value
+      })">บันทึกค่าใช้จ่าย</button>
+      <div class="hint" style="margin-top:10px">
+        * การพิมพ์ใบเบิก/รายงานตามช่วงเวลา → ไปที่หน้า “รายงานช่วงเวลา” แล้วเลือกหมวด + กดพิมพ์/PDF
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="row" style="justify-content:space-between;align-items:center">
+        <div>
+          <h3 style="margin:0">รายการค่าใช้จ่าย</h3>
+          <div class="hint">ใช้ตัวกรองหมวดเพื่อทำใบเบิกเฉพาะหมวดได้</div>
+        </div>
+        <div class="chip">ทั้งหมด ${fmtInt(DB.expenses.length)} รายการ</div>
+      </div>
+      <div class="hr"></div>
+      <div class="pillbar no-print">${catPills}</div>
+      <div style="height:10px"></div>
+      <table>
+        <thead><tr><th>วันที่</th><th>หมวด</th><th class="tdr">จำนวน</th><th>รายละเอียด</th></tr></thead>
+        <tbody>${list.length?rows:`<tr><td colspan="4" class="muted">ยังไม่มีข้อมูล</td></tr>`}</tbody>
+      </table>
+    </div>
+  `;
+  return wrap;
+};
+
+Pages.reports = () => {
+  setHeader("รายงานช่วงเวลา", "เลือกช่วงเวลา → สรุปยอดขาย/ลูกหนี้/ค่าใช้จ่าย/กำไร และพิมพ์เป็น PDF");
+  const wrap=document.createElement("div");
+  wrap.className="grid";
+
+  const start = STATE.range.start;
+  const end = STATE.range.end;
+  const s = sumSales(start,end);
+  const e = sumExpenses(start,end);
+  const net = s.revenue - e.total;
+
+  // breakdown by expense category within range
+  const expMap={};
+  for(const x of e.list){
+    expMap[x.category]= (expMap[x.category]||0)+normalizeNumber(x.amount);
+  }
+  const expRows = Object.entries(expMap).sort((a,b)=>b[1]-a[1]).map(([cat,val])=>`
+    <tr><td><b>${cat}</b></td><td class="tdr">${fmtMoney(val)}</td></tr>
+  `).join("");
+
+  // top customers within range
+  const custMap={};
+  for(const sale of s.list){
+    const cid=sale.customerId||"unknown";
+    custMap[cid]=custMap[cid]||{revenue:0,paid:0,receivable:0,count:0};
+    custMap[cid].revenue += normalizeNumber(sale.total);
+    custMap[cid].paid += normalizeNumber(sale.paid);
+    custMap[cid].receivable += (normalizeNumber(sale.total)-normalizeNumber(sale.paid));
+    custMap[cid].count += 1;
+  }
+  const custRows = Object.entries(custMap).map(([cid,v])=>{
+    const c=DB.customers.find(x=>x.id===cid);
+    return {name:c?c.name:"(ไม่ระบุลูกค้า)",...v};
+  }).sort((a,b)=>b.revenue-a.revenue).slice(0,12)
+    .map(x=>`
+      <tr>
+        <td><b>${x.name}</b></td>
+        <td class="tdr">${fmtMoney(x.revenue)}</td>
+        <td class="tdr">${fmtMoney(x.paid)}</td>
+        <td class="tdr">${fmtMoney(x.receivable)}</td>
+        <td class="tdr">${fmtInt(x.count)}</td>
+      </tr>
+    `).join("");
+
+  wrap.innerHTML=`
+    <div class="card no-print">
+      <h3 style="margin:0">ตั้งค่าช่วงเวลา</h3>
+      <div class="hr"></div>
+      <div class="grid g3">
+        <div><label>เริ่มวันที่</label><input id="r_start" type="date" value="${start}"></div>
+        <div><label>ถึงวันที่</label><input id="r_end" type="date" value="${end}"></div>
+        <div style="display:flex;gap:8px;align-items:flex-end">
+          <button class="btn pri" onclick="Actions.setRange($$('#r_start').value,$$('#r_end').value)">คำนวณ</button>
+          <button class="btn ghost" onclick="Actions.print()">พิมพ์/PDF</button>
+        </div>
+      </div>
+      <div class="hint" style="margin-top:10px">
+        * ใช้หน้าเดียวทำรายงานผู้ถือหุ้น/ใบเบิกค่าแรง (เลือกช่วงเวลา แล้วพิมพ์)
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="row" style="justify-content:space-between;align-items:flex-end">
+        <div>
+          <h3 style="margin:0">รายงานสรุปผลประกอบการ</h3>
+          <div class="hint">ช่วง ${start} ถึง ${end}</div>
+        </div>
+        <div class="chip">ออกรายงาน: ${iso()}</div>
+      </div>
+      <div class="hr"></div>
+      <div class="grid g4">
+        <div class="card hi"><div class="stat"><div><div class="k">ยอดขาย</div><div class="v">${fmtMoney(s.revenue)}</div><div class="s">รวมบิล</div></div><div class="chip">REV</div></div></div>
+        <div class="card"><div class="stat"><div><div class="k">รับเงินแล้ว</div><div class="v">${fmtMoney(s.paid)}</div><div class="s">Cash In</div></div><div class="chip ok">PAID</div></div></div>
+        <div class="card"><div class="stat"><div><div class="k">ค้างรับ</div><div class="v">${fmtMoney(s.receivable)}</div><div class="s">A/R</div></div><div class="chip wait">DUE</div></div></div>
+        <div class="card"><div class="stat"><div><div class="k">กำไรสุทธิ</div><div class="v">${fmtMoney(net)}</div><div class="s">ยอดขาย - รายจ่าย</div></div><div class="chip">NET</div></div></div>
+      </div>
+
+      <div style="height:12px"></div>
+      <div class="grid g2">
+        <div class="card">
+          <h3 style="margin:0">ค่าใช้จ่ายแยกตามหมวด</h3>
+          <div class="hr"></div>
+          <table>
+            <thead><tr><th>หมวด</th><th class="tdr">จำนวน</th></tr></thead>
+            <tbody>${Object.keys(expMap).length?expRows:`<tr><td colspan="2" class="muted">ไม่มีค่าใช้จ่ายในช่วงนี้</td></tr>`}</tbody>
+          </table>
+        </div>
+
+        <div class="card">
+          <h3 style="margin:0">ลูกค้าสูงสุดในช่วงเวลา</h3>
+          <div class="hr"></div>
+          <table>
+            <thead><tr><th>ลูกค้า</th><th class="tdr">ยอดซื้อ</th><th class="tdr">รับแล้ว</th><th class="tdr">ค้างรับ</th><th class="tdr">จำนวนบิล</th></tr></thead>
+            <tbody>${s.list.length?custRows:`<tr><td colspan="5" class="muted">ไม่มีบิลในช่วงนี้</td></tr>`}</tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  `;
+  return wrap;
+};
+
+/* ---------- 9) Boot ---------- */
+(function boot(){
+  // 1) migrate once before any render
+  try{ migrateV1Once(); }catch(e){
+    DB.meta.migrationNotes = [...(DB.meta.migrationNotes||[]), `MIGRATE_ERROR@${new Date().toISOString()} ${String(e)}`];
+    save();
+  }
+
+  // 2) default page
+  STATE.page = "dash";
+
+  // 3) render
+  render();
 })();
 </script>
 </body>
